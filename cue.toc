@@ -1,0 +1,42 @@
+## Interface: 50400
+## Version: @project-version@
+## Author: ckaotik
+
+## Title: Cue
+## Notes: Lightweight oQueue client
+
+## RequiredDeps:
+## OptionalDeps: oQueue
+## SavedVariables: CueDB
+## SavedVariablesPerCharacter:
+
+## LoadManagers: AddonLoader, Addon Control Panel
+## X-LoadOn-Slash: /cue, /queue
+## X-LoadOn-InterfaceOptions: Cue
+
+# X-Website:
+# X-Category:
+
+#@no-lib-strip@
+# libraries
+# libs\LibStub.lua
+libs\UTF8\utf8data.lua
+libs\UTF8\utf8.lua
+#@end-no-lib-strip@
+
+# localization
+
+# constants
+realms.lua
+constants.lua
+oqueue.lua
+
+# main files
+hash.lua
+core.lua
+
+battlenet.lua
+listener.lua
+announcer.lua
+ui.lua
+config.lua
