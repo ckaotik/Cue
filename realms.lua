@@ -10,11 +10,18 @@ local region = string.lower( GetCVar('portal') or '' )
 -- required info: realm name, id, battle group, language
 local realmInfo = {}
 function ns.GetRealmInfoFromName(realmName)
+	realmName = gsub(realmName, "%s-%b()", "") -- remove suffixes such as (EU)
 	realmName = gsub(realmName, " ", "")
 
 	local data = realmInfo[ realmName ]
 	if data then
 		return data.id, data.plain or realmName, data.locale, data.pvp, data.rp, data.group
+	else
+		for _, data in pairs(realmInfo) do
+			if data.plain and data.plain == realmName then
+				return data.id, data.plain, data.locale, data.pvp, data.rp, data.group
+			end
+		end
 	end
 end
 
@@ -233,7 +240,7 @@ elseif region == 'eu' then
 		["Lightbringer"] 		= { id =  48, group = "", locale = "enGB", rp = nil,  pvp = nil },
 		["Nagrand"] 			= { id =  88, group = "", locale = "enGB", rp = nil,  pvp = nil },
 		["Nordrassil"] 			= { id = 162, group = "", locale = "enGB", rp = nil,  pvp = nil },
-		["Quel'Thalas(EU)"] 	= { id =  72, group = "", locale = "enGB", rp = nil,  pvp = nil },
+		["Quel'Thalas"]			= { id =  72, group = "", locale = "enGB", rp = nil,  pvp = nil },
 		["Runetotem"] 			= { id =  18, group = "", locale = "enGB", rp = nil,  pvp = nil },
 		["Saurfang"] 			= { id =  19, group = "", locale = "enGB", rp = nil,  pvp = nil },
 		["Shadowsong"] 			= { id =  31, group = "", locale = "enGB", rp = nil,  pvp = nil },
@@ -285,7 +292,7 @@ elseif region == 'eu' then
 		["Mazrigos"] 			= { id = 280, group = "", locale = "enGB", rp = nil,  pvp = true },
 		["Neptulon"] 			= { id = 275, group = "", locale = "enGB", rp = nil,  pvp = true },
 		["Outland"] 			= { id = 269, group = "", locale = "enGB", rp = nil,  pvp = true },
-		["Ragnaros(EU)"] 		= { id =  73, group = "", locale = "enGB", rp = nil,  pvp = true },
+		["Ragnaros"] 			= { id =  73, group = "", locale = "enGB", rp = nil,  pvp = true },
 		["Ravencrest"] 			= { id = 202, group = "", locale = "enGB", rp = nil,  pvp = true },
 		["Shadowmoon"] 			= { id =  74, group = "", locale = "enGB", rp = nil,  pvp = true },
 		["ShatteredHalls"] 		= { id = 108, group = "", locale = "enGB", rp = nil,  pvp = true },
@@ -468,6 +475,9 @@ elseif region == 'eu' then
 		["Shen'dralar"] 		= { id = 354, group = "", locale = "esES", rp = true, pvp = true },
 
 		["LosErrantes"] 		= { id = 351, group = "", locale = "esES", rp = true, pvp = nil },
+
+		-- EU portugese
+		["Aggra"] 				= { id = 287, group = "Blackout", locale = "ptBR", rp = nil,  pvp = true },
 
 		-- EU italian
 		["Nemesis"] 			= { id = 248, group = "", locale = "itIT", rp = nil, pvp = true },
@@ -781,7 +791,6 @@ end
 	"Gilneas(US)"] 		= { id = 243 },
 	"Hamuul(KR)"] 			= { id = 244 },
 	"Mekkatorque"] 		= { id = 245 },
-	"Aggra(Português)"] 	= { id = 287 },
 	"Anasterian"]	 		= { id = 251 },
 
 	-- missing

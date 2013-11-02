@@ -46,15 +46,5 @@ local queueStatus = {
 ns.const.status = queueStatus
 
 -- TODO: obfuscate
-local bannedList = {
-	"tts#1959", 			-- OQ exploiter
-	"humiliation#1231", 	-- nazi symbol in OQ names
-	"peaceandlove#1473", 	-- bandit
-	"mokkthemadd#1462", 	-- flamed out, hard
-	"fr0st#1118", 			-- n-word to scorekeeper
-	"drunkhobo15#1211", 	-- exploit/hack
-	"bradley#1957", 		-- spamming the scorekeeper, douchery
-	"thetcer#1446", 		-- OQ exploiter
-	"pawnstar#1571", 		-- exploit helm; 'f-you f*ggot' - chumlee
-}
+local bannedList = {}
 ns.const.banned = bannedList

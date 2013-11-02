@@ -13,7 +13,9 @@ function ns.Initialize()
 			elseif IsShiftKeyDown() then
 				ns.Toggle()
 			else
+				ns.InitUI()
 				ToggleFrame(_G["CueFrame"])
+				ns.UpdateUI()
 			end
 		end,
 	})

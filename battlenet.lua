@@ -1,9 +1,6 @@
 local addonName, ns, _ = ...
 local BNET_PREFIX = "(OQ)"
 
--- hide (OQ) message toasts
--- hide automated Friend Request Sent/Received toast
-
 -- edits the player's battle.net status to include OQ tag
 function ns.EnableBnetBroadcast()
 	if not BNConnected() or not ns.db.useBattleNet then return end
@@ -32,7 +29,7 @@ end
 -- send a message across battle.net via private message -or- friend request + note
 function ns.SendBnetMessage(battleTag, message, messageType)
 	if false and IsBnetFriend(battleTag) then
-		-- TODO: ficure out presenceID if online
+		-- TODO: figure out presenceID if online
 		-- BNSendWhisper(target, message)
 	else
 		if not ns.db.sentRequests then ns.db.sentRequests = {} end
@@ -91,8 +88,11 @@ function ns.PreventBnetSpam()
 	local BN_TOAST_TYPE_CONVERSATION = 6
 
 	hooksecurefunc('BNToastFrame_AddToast', function(toastType, toastData)
-		print('Prost!', toastType, toastData)
-		if toastType == BN_TOAST_TYPE_BROADCAST then
+		-- hide (OQ) message toasts
+		-- hide automated Friend Request Sent/Received toast
+		if toastType == BN_TOAST_TYPE_NEW_INVITE then
+			--
+		elseif toastType == BN_TOAST_TYPE_BROADCAST then
 			local presenceID, givenName, surname, toonName, toonID, client, isOnline, lastOnline, isAFK, isDND, messageText, noteText, isRIDFriend, broadcastTime, canSoR = BNGetFriendInfoByID(toastData)
 			-- local _, toonName, client = BNGetToonInfo(presenceID)
 

@@ -126,6 +126,8 @@ function(data)
 end
 ns.oq.DecodePremadeInfo = DecodePremadeInfo
 
+-- /spew Cue.oq.DecodeLeaderData("NjM5MiNtbGVnbmFocmE7NDYzO7rQuNCH0YLRvtCl0b3QsNCS0AAA")
+
 local password = "abc123"
 local DecodeLeaderData = -- oq and oq.decode_data and function(data) return oq.decode_data(password, data) end or
 function(data)
@@ -136,8 +138,8 @@ function(data)
 	-- s = oq.decrypt(password, s)
 
 	local name, realm, battleTag = string.split(',', s)
-	local id, realmName, locale, pvp, rp, group = ns.GetRealmInfoFromID(realm)
-	return name, realmName, battleTag
+	-- local id, realmName, locale, pvp, rp, group = ns.GetRealmInfoFromID(realm)
+	return name, realm, battleTag
 end
 ns.oq.DecodeLeaderData = DecodeLeaderData
 
