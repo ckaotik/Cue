@@ -1,15 +1,19 @@
 local addonName, ns, _ = ...
 
 function ns.PruneData()
-	-- remove posts older than 5min
-	local outdatedTime = time() - 5*60
+	-- remove posts older than 2min
+	local outdatedTime = time() - 2*60
 	for token, info in pairs(ns.db.premadeCache) do
 		if info.updated < outdatedTime then
 			wipe(info)
 			ns.db.premadeCache[token] = nil
 		end
 	end
+
 	ns.UpdateUI()
+	if not InCombatLockdown() then
+		collectgarbage()
+	end
 end
 
 local function SanitizeText(text)
@@ -76,6 +80,7 @@ local function OnPremade(version, token, ttl, messageType, messageText)
 	premadeCache[leaderInfo].title      = SanitizeText(premadeTitle)
 	premadeCache[leaderInfo].comment    = SanitizeText(comment)
 	premadeCache[leaderInfo].leader     = leaderInfo
+	premadeCache[leaderInfo].size       = numMembers
 	premadeCache[leaderInfo].waiting    = numWaiting
 	premadeCache[leaderInfo].updated    = msgTime
 
@@ -84,7 +89,6 @@ local function OnPremade(version, token, ttl, messageType, messageText)
 	premadeCache[leaderInfo].resilience = resilience
 
 	premadeCache[leaderInfo].group      = premadeCache[leaderInfo].group or {}
-	premadeCache[leaderInfo].group.size = numMembers
 	premadeCache[leaderInfo].group.tank = tank
 	premadeCache[leaderInfo].group.heal = heal
 	premadeCache[leaderInfo].group.dps  = dps
@@ -95,9 +99,7 @@ local function OnPremade(version, token, ttl, messageType, messageText)
 		"\n Leader:", leaderName, realm, battleTag, leaderExperience,
 		"\n", msgTime, status, minMMR, realmSpecific, hasPassword) --]]
 
-	if faction == ns.playerFaction then
-		ns.UpdateUI()
-	end
+	ns.UpdateUI()
 end
 
 local function OnWaitlistJoin(...)

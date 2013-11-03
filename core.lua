@@ -26,8 +26,8 @@ function ns.Initialize()
 	if not CueDB then CueDB = {} end
 	ns.db = CueDB
 
-	-- TODO: FIXME: should be calculated on demand
-	ns.playerFaction = UnitFactionGroup("player")
+	if not ns.db.queued then ns.db.queued = {} end
+	if not ns.db.blacklist then ns.db.blacklist = {} end
 
 	SLASH_CUE1 = '/cue'
 	SLASH_CUE2 = '/queue'
@@ -35,13 +35,16 @@ function ns.Initialize()
 		ns.InitUI()
 		ns.UpdateUI()
 		ToggleFrame(_G["CueFrame"])
-
-		ns.Enable()
 	end
+
+	ns.Enable()
 
 	-- expose
 	_G[addonName] = ns
 end
+
+local AceTimer = LibStub("AceTimer-3.0")
+local pruneData
 
 local enabled = nil
 function ns.Enable()
@@ -49,13 +52,16 @@ function ns.Enable()
 	ns.EnableBnetBroadcast()
 	enabled = true
 
-	LibStub("AceTimer-3.0"):ScheduleRepeatingTimer(ns.PruneData, 2*60)
+	ns.PruneData()
+	pruneData = AceTimer:ScheduleRepeatingTimer(ns.PruneData, 60)
 end
 
 function ns.Disable()
 	LeaveChannelByName('oqgeneral')
 	ns.DisableBnetBroadcast()
 	enabled = nil
+
+	AceTimer:CancelTimer(pruneData)
 end
 
 function ns.Toggle()

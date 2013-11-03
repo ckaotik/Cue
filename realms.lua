@@ -369,7 +369,7 @@ elseif region == 'eu' then
 
 		["ConseildesOmbres"] 	= { id = 295, group = "", locale = "frFR", rp = true, pvp = true },
 		["CultedelaRiveNoire"] 	= { id = 307, group = "", locale = "frFR", rp = true, pvp = true },
-		["LaCroisadeécarlate"] 	= { id = 293, group = "", locale = "frFR", rp = true, pvp = true },
+		["LaCroisadeécarlate"] 	= { id =  29, group = "", locale = "frFR", rp = true, pvp = true }, -- is also 293?
 
 		-- EU german
 		["Aegwynn"] 			= { id =   1, group = "", locale = "deDe", rp = nil,  pvp = true },

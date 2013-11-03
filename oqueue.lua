@@ -1,10 +1,11 @@
 local _, ns = ...
 ns.oq = {}
+
 -- GLOBALS: oq
 -- GLOBALS: bit, string, strlen
 
--- Code taken from oQueue
 -- encodings & decodings to be able to handle oQueues data.
+-- Code taken from oQueue, credits go to tiny
 local oq_ascii = {}
 local oq_mime64 = {}
 
@@ -24,7 +25,8 @@ local function init_table()
 end
 init_table()
 
-local bset = oq and oq.bset or function(flags, mask, set)
+local bset = -- oq and oq.bset or
+function(flags, mask, set)
 	flags = bit.bor(flags, mask)
 	if not set or set == 0 then
 		flags = bit.bxor( flags, mask )
@@ -32,7 +34,8 @@ local bset = oq and oq.bset or function(flags, mask, set)
 	return flags
 end
 
-local base256 = oq and oq.base256 or function(w, x, y, z)
+local base256 = -- oq and oq.base256 or
+function(w, x, y, z)
 	local w, x, y, z = oq_mime64[ w ] or 0, oq_mime64[ x ] or 0,  oq_mime64[ y ] or 0, oq_mime64[ z ] or 0
 
 	--    a = (w << 2) + ((x & 0x30) >> 4)
@@ -49,7 +52,8 @@ local base256 = oq and oq.base256 or function(w, x, y, z)
 end
 
 -- raw (en|de)coding functions
-local Decode256 = oq and oq.decode256 or function(enc)
+local Decode256 = -- oq and oq.decode256 or
+function(enc)
 	if not enc or enc == "" then return "" end
 	local str = ""
 	local w, x, y, z, a, b, c
@@ -64,7 +68,8 @@ local Decode256 = oq and oq.decode256 or function(enc)
 	return str
 end
 
-local DecodeDigit = oq and oq.decode_mime64_digits or function(s)
+local DecodeDigit = -- oq and oq.decode_mime64_digits or
+function(s)
 	if not s then return 0 end
 	local n = 0
 	for i = 1, #s do
@@ -74,7 +79,8 @@ local DecodeDigit = oq and oq.decode_mime64_digits or function(s)
 end
 ns.oq.DecodeDigit = DecodeDigit
 
-local DecodeFlags = oq and oq.decode_mime64_flags or function(f1, f2, f3, f4, f5, f6)
+local DecodeFlags = -- oq and oq.decode_mime64_flags or
+function(f1, f2, f3, f4, f5, f6)
 	local a = 0
 	a = bset( a, 0x01, f1 )
 	a = bset( a, 0x02, f2 )

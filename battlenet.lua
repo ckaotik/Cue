@@ -3,7 +3,7 @@ local BNET_PREFIX = "(OQ)"
 
 -- edits the player's battle.net status to include OQ tag
 function ns.EnableBnetBroadcast()
-	if not BNConnected() or not ns.db.useBattleNet then return end
+	if not BNFeaturesEnabledAndConnected() or not BNConnected() or not ns.db.useBattleNet then return end
 
 	local _, _, _, broadcastText = BNGetInfo()
 	if broadcastText == "" then
@@ -26,14 +26,24 @@ function ns.DisableBnetBroadcast()
 	-- if removeAddedFriends then ... end
 end
 
+function ns.IsBnetFriend(searchBattleTag)
+	local presenceID, battleTag, isOnline
+	for i = 1, BNGetNumFriends() do
+		presenceID, _, battleTag, _, _, _, client, isOnline = BNGetFriendInfo(i)
+		if battleTag == searchBattleTag then
+			return presenceID, isOnline
+		end
+	end
+end
+
 -- send a message across battle.net via private message -or- friend request + note
 function ns.SendBnetMessage(battleTag, message, messageType)
-	if false and IsBnetFriend(battleTag) then
+	if false and IsBNFriend(battleTag) then
 		-- TODO: figure out presenceID if online
 		-- BNSendWhisper(target, message)
 	else
-		if not ns.db.sentRequests then ns.db.sentRequests = {} end
-		ns.db.sentRequests[battleTag] = (ns.db.sentRequests[battleTag] and ns.db.sentRequests[battleTag] .. ', ' or '') .. messageType
+		-- if not ns.db.sentRequests then ns.db.sentRequests = {} end
+		-- ns.db.sentRequests[battleTag] = (ns.db.sentRequests[battleTag] and ns.db.sentRequests[battleTag] .. ', ' or '') .. messageType
 		BNSendFriendInvite(battleTag, message)
 	end
 end
@@ -70,9 +80,29 @@ end
 	end
 --]]
 
+function ns.JoinQueue(leader, token)
+	if ns.db.queued[leader] and ns.db.queued[leader] == ns.const.status.PENDING then
+		-- we already requested wait list slot
+		return
+	end
+
+	-- prepare message
+	-- send message
+
+	-- store
+	ns.db.queued[leader] = ns.const.status.PENDING
+end
+
+function ns.LeaveQueue(leader, announce)
+	ns.db.queued[leader] = nil
+	if announce then
+		-- send message to get us out of queue
+	end
+end
+
 -- join a premade group
 function ns.JoinBnetGroup(...)
-	--
+	ns.LeaveQueue(leader)
 
 	-- if removeFriendOnJoin then ... end
 end
@@ -96,9 +126,9 @@ function ns.PreventBnetSpam()
 			local presenceID, givenName, surname, toonName, toonID, client, isOnline, lastOnline, isAFK, isDND, messageText, noteText, isRIDFriend, broadcastTime, canSoR = BNGetFriendInfoByID(toastData)
 			-- local _, toonName, client = BNGetToonInfo(presenceID)
 
-			if messageText:match('BLOCK') then  -- check if the message contains 'BLOCK'
+			-- if messageText:match('BLOCK') then  -- check if the message contains 'BLOCK'
 				-- BNToastFrame_RemoveToast(toastType, toastData)  -- VOILA!
-			end
+			-- end
 		end
 	end)
 end
