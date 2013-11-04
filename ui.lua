@@ -1,5 +1,4 @@
 local addonName, ns, _ = ...
-local AceTimer = LibStub("AceTimer-3.0")
 
 -- GLOBALS: _G, UIParent, GRAY_FONT_COLOR_CODE, RED_FONT_COLOR_CODE, COMBAT_RATING_RESILIENCE_PLAYER_DAMAGE_TAKEN, MAX_PLAYER_LEVEL, SEARCH
 -- GLOBALS: CreateFrame, FauxScrollFrame_OnVerticalScroll, FauxScrollFrame_Update, FauxScrollFrame_GetOffset, SetPortraitToTexture, UnitLevel, GetAverageItemLevel, GetCombatRating, UIDropDownMenu_CreateInfo, UIDropDownMenu_AddButton, UIDropDownMenu_SetText, UIDropDownMenu_SetWidth, ToggleDropDownMenu, BNSendFriendInvite, IsIgnored, EditBox_ClearFocus, ChatFrame_SendSmartTell
@@ -17,14 +16,17 @@ end
 function ns.InitUI()
 	if _G['CueFrame'] then return end
 
+	-- UI filters
 	local filters = {
 		types = {},
 	}
 	local function MatchesFilters(data)
 		local name, realm, battleTag = ns.oq.DecodeLeaderData( data.leader )
+		local _, realm, locale = ns.GetRealmInfoFromID(realm)
 		local isBlocked = ns.Find(ns.db.blacklist, battleTag) or IsIgnored(name.."-"..realm)
 		if isBlocked then return nil end
 
+		-- TODO: could probably be done by CustomSearch, too
 		local premadeType = data.type
 		if ns.Count( filters.types ) > 0 then
 			local pass = false
@@ -38,12 +40,13 @@ function ns.InitUI()
 		end
 
 		if filters.search then
-			-- TODO: use LibCustomSearch
-			return (data.title:find( filters.search ) or data.comment:find( filters.search ) or name:find( filters.search )) and true or nil
+			if not ns.Find(data, filters.search) then
+				return nil
+			end
 		end
 
 		if filters.qualified then
-			local playerLevel      = UnitLevel("player")
+			local playerLevel = UnitLevel("player")
 			local level = ns.const.level[ data.level ] or MAX_PLAYER_LEVEL
 			local min, max = string.match(level, "^(%d+)%D*(%d*)$")
 			      max = max ~= '' and max or min
@@ -226,6 +229,14 @@ function ns.InitUI()
 			filters.search = (text ~= "" and text ~= SEARCH) and string.lower(text) or nil
 			ns.UpdateUI(true)
 		end)
+		searchbox.tiptext = [[Use & (and) and | (or) to combine queries.
+  r - realm
+  l - leader
+  g - group size
+  w - wait list
+example: flex & r:en & l:athene & g:> 9 & w:< 10]]
+		searchbox:SetScript("OnEnter", ns.ShowTooltip)
+		searchbox:SetScript("OnLeave", ns.HideTooltip)
 	header.search = searchbox
 
 	-- table headers

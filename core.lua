@@ -1,7 +1,12 @@
 local addonName, ns, _ = ...
 
+-- GLOBALS: _G, LibStub, GameTooltip, CueDB, SlashCmdList, SLASH_CUE1, SLASH_CUE2
+-- GLOBALS: ToggleFrame, IsShiftKeyDown, RegisterAddonMessagePrefix, InterfaceOptionsFrame_OpenToCategory, JoinTemporaryChannel, LeaveChannelByName
+-- GLOBALS: type, tostringall, assert, pairs, print
+local join, format = string.join, string.format
+
 function ns.Initialize()
-	ns.ldb = LibStub("LibDataBroker-1.1"):NewDataObject(addonName, {
+	LibStub("LibDataBroker-1.1"):NewDataObject(addonName, {
 		type  = "launcher",
 		icon  = "Interface\\Icons\\Achievement_BG_KillXEnemies_GeneralsRoom",
 		label = addonName,
@@ -122,7 +127,7 @@ function ns.Print(text, ...)
 	elseif ... then
 		text = join(", ", tostringall(text, ...))
 	end
-	DEFAULT_CHAT_FRAME:AddMessage("|cffE01B5DTwinkle|r "..text)
+	print("|cffE01B5DTwinkle|r "..text)
 end
 
 function ns.Debug(...)

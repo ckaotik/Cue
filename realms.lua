@@ -25,14 +25,18 @@ function ns.GetRealmInfoFromName(realmName)
 	end
 end
 
-function ns.GetRealmInfoFromID(realmID)
+function ns.GetRealmInfoFromID(realmID, asTable)
 	if type(realmID) == "string" then
 		realmID = tonumber(realmID)
 	end
 
 	for realmName, data in pairs(realmInfo) do
 		if data.id == realmID then
-			return realmID, data.plain or realmName, data.locale, data.pvp, data.rp, data.group
+			if asTable then
+				return data
+			else
+				return realmID, data.plain or realmName, data.locale, data.pvp, data.rp, data.group
+			end
 		end
 	end
 end

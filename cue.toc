@@ -3,7 +3,7 @@
 ## Author: ckaotik
 
 ## Title: Cue
-## Notes: Lightweight oQueue client
+## Notes: oQueue client
 
 ## RequiredDeps:
 ## OptionalDeps: oQueue
@@ -13,15 +13,18 @@
 ## LoadManagers: AddonLoader, Addon Control Panel
 ## X-LoadOn-Slash: /cue, /queue
 ## X-LoadOn-InterfaceOptions: Cue
+## X-LoadOn-LDB-Launcher: Interface\Icons\Achievement_BG_KillXEnemies_GeneralsRoom
 
 # X-Website:
 # X-Category:
 
 #@no-lib-strip@
 # libraries
-# libs\LibStub.lua
-libs\UTF8\utf8data.lua
-libs\UTF8\utf8.lua
+#libs\UTF8\utf8data.lua
+#libs\UTF8\utf8.lua
+libs\LibStub.lua
+libs\LibDataBroker-1.1.lua
+libs\CustomSearch-1.0\CustomSearch-1.0.lua
 #@end-no-lib-strip@
 
 # localization
@@ -32,11 +35,13 @@ constants.lua
 oqueue.lua
 
 # main files
-hash.lua
+#hash.lua
 core.lua
 
 battlenet.lua
 listener.lua
 announcer.lua
+
+search.lua
 ui.lua
 config.lua

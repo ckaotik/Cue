@@ -27,7 +27,7 @@ end
 local optionsTable = {
 	type = 'group',
 	args = {
-		--[[ ['MidgetLocalDB'] = {
+		--[[ ['CueLocalDB'] = {
 			type = 'group',
 			inline = true,
 			name = 'Individual Settings',
