@@ -6,24 +6,27 @@ local addonName, ns, _ = ...
 local join, format = string.join, string.format
 
 function ns.Initialize()
-	LibStub("LibDataBroker-1.1"):NewDataObject(addonName, {
-		type  = "launcher",
-		icon  = "Interface\\Icons\\Achievement_BG_KillXEnemies_GeneralsRoom",
-		label = addonName,
-
-		OnClick = function(self, button)
-			if button == "RightButton" then
-				-- open config
-				InterfaceOptionsFrame_OpenToCategory(addonName)
-			elseif IsShiftKeyDown() then
-				ns.Toggle()
-			else
-				ns.InitUI()
-				ToggleFrame(_G["CueFrame"])
-				ns.UpdateUI()
-			end
-		end,
-	})
+	local LDB = LibStub("LibDataBroker-1.1")
+	local ldb = LDB:GetDataObjectByName(addonName)
+	if not ldb then
+		ldb = LDB:NewDataObject(addonName, {
+			type  = "launcher",
+			icon  = "Interface\\Icons\\Achievement_BG_KillXEnemies_GeneralsRoom",
+			label = addonName
+		})
+	end
+	ldb.OnClick = function(self, button)
+		if button == "RightButton" then
+			-- open config
+			InterfaceOptionsFrame_OpenToCategory(addonName)
+		elseif IsShiftKeyDown() then
+			ns.Toggle()
+		else
+			ns.InitUI()
+			ToggleFrame(_G["CueFrame"])
+			ns.UpdateUI()
+		end
+	end
 
 	RegisterAddonMessagePrefix("OQ")
 	ns.PreventBnetSpam()
