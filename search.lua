@@ -13,7 +13,7 @@ Filters.abstract = {
 		return not operator and search
 	end,
 	match = function(self, target, _, search)
-		local data = string.join(' ', target.title, target.comment)
+		local data = string.join(' ', target.title or '', target.comment or '')
 		return Search:Find(search, data)
 	end
 }
@@ -25,7 +25,7 @@ Filters.leader = {
 	match = function(self, target, _, search)
 		local name, realm, battleTag = ns.oq.DecodeLeaderData( target.leader )
 		local _, realm = ns.GetRealmInfoFromID(realm)
-		local data = string.join(' ', name, realm, battleTag)
+		local data = string.join(' ', name or '', realm or '', battleTag or '')
 		return Search:Find(search, data)
 	end
 }
@@ -37,7 +37,7 @@ Filters.realm = {
 	match = function(self, target, _, search)
 		local _, realm = ns.oq.DecodeLeaderData( target.leader )
 		local _, realm, locale = ns.GetRealmInfoFromID(realm)
-		local data = string.join(' ', realm, locale)
+		local data = string.join(' ', realm or '', locale or '')
 		return Search:Find(search, data)
 	end
 }

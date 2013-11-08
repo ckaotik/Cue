@@ -23,7 +23,7 @@ function ns.InitUI()
 	local function MatchesFilters(data)
 		local name, realm, battleTag = ns.oq.DecodeLeaderData( data.leader )
 		local _, realm, locale = ns.GetRealmInfoFromID(realm)
-		local isBlocked = ns.Find(ns.db.blacklist, battleTag) or IsIgnored(name.."-"..realm)
+		local isBlocked = ns.Find(ns.db.blacklist, battleTag) or IsIgnored( realm and name.."-"..realm or name)
 		if isBlocked then return nil end
 
 		-- TODO: could probably be done by CustomSearch, too
