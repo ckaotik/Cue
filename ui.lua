@@ -8,6 +8,8 @@ local tank   = "|TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:16:16:0:0:64:64
 local healer = "|TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:16:16:0:0:64:64:20:39:1:20|t"
 local dps    = "|TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:16:16:0:0:64:64:20:39:22:41|t"
 
+local UI_UPDATE_DELAY = 5
+
 local playerFaction = UnitFactionGroup("player")
 function ns.UpdateUI()
 	-- dummy until UI has been initialized
@@ -115,6 +117,10 @@ function ns.InitUI()
 	local function ShowPremadeTooltip(self, tooltip)
 		if not self.key then return end
 		local data = ns.db.premadeCache[ self.key ]
+		if not data then
+			ns.UpdateUI(true)
+			return
+		end
 
 		local leaderName, realm, battleTag = ns.oq.DecodeLeaderData(data.leader)
 		if not realm then return end
@@ -164,7 +170,7 @@ function ns.InitUI()
 	-- header inset, containing filters
 	local header = CreateFrame("Frame", "$parentHeader", frame, "InsetFrameTemplate")
 	header:SetPoint("TOPLEFT", 2, -20)
-	header:SetPoint("BOTTOMRIGHT", "$parent", "TOPRIGHT", -4, -20 - 60)
+	header:SetPoint("BOTTOMRIGHT", "$parent", "TOPRIGHT", -4, -20 - 66)
 	header:SetFrameLevel(1) -- move below portrait level
 
 	-- filters
@@ -296,7 +302,6 @@ example: flex & r:en & l:athene & g:> 9 & w:< 10]]
 	local dropDown = CreateFrame("Frame", "$parentPremadeDropDown", frame, "UIDropDownMenuTemplate")
 	dropDown.displayMode = "MENU"
 	dropDown.initialize = function(self, level, menuList)
-		print('init', level, menuList, self.key)
 		local lvl = level or 1
 		local info = UIDropDownMenu_CreateInfo()
 
@@ -341,7 +346,11 @@ example: flex & r:en & l:athene & g:> 9 & w:< 10]]
 			dropDown.key = self.key
 			ToggleDropDownMenu(nil, nil, dropDown, "cursor", 3, -3)
 		else
-			--
+			--[[
+			LockHighlight(self)
+			-- store selected info
+			_G['CueFrame'].pauseUpdates = (numSelected > 0)
+			--]]
 		end
 	end
 
@@ -360,8 +369,14 @@ example: flex & r:en & l:athene & g:> 9 & w:< 10]]
 		row:SetPoint("RIGHT", list, "RIGHT", 2, 0)
 		if i == 1 then
 			row:SetPoint("TOPLEFT", list, "TOPLEFT")
+			background:SetVertexColor(0.588, 0.588, 0.588, 0.3)
 		else
 			row:SetPoint("TOPLEFT", list.buttons[i-1], "BOTTOMLEFT", 0, 0)
+			if i%2 == 0 then
+				background:SetVertexColor(0, 0.694, 0.941, 0.3)
+			else
+				background:SetVertexColor(0.588, 0.588, 0.588, 0.3)
+			end
 		end
 
 		row:RegisterForClicks("AnyUp")
@@ -405,6 +420,11 @@ example: flex & r:en & l:athene & g:> 9 & w:< 10]]
 		      group:SetJustifyH("CENTER")
 		row.group = group
 
+		local status = row:CreateTexture(nil, "BACKGROUND")
+		      status:SetPoint("TOPLEFT", waiting, "TOPLEFT", -4 - 20, 0)
+		      status:SetPoint("BOTTOMRIGHT", row, "BOTTOMLEFT", -4, 0)
+		row.status = status
+
 		list.buttons[i] = row
 	end
 
@@ -420,24 +440,29 @@ example: flex & r:en & l:athene & g:> 9 & w:< 10]]
 			local index = i + offset
 
 			local data = self.data[index]
-			if data then data = ns.db.premadeCache[ data ] end
+			data = data and ns.db.premadeCache[ data ] or nil
 
-			if data then
+			if not data then
+				row:Hide()
+			else
 				row.key = self.data[index]
 
 				if data.resilience > 0 then
-					-- local isLow = resilienceRating < data.resilience
-					row.level:SetFormattedText("%s%s", --[[isLow and RED_FONT_COLOR_CODE or --]] '', data.resilience)
+					row.level:SetText(data.resilience)
 				elseif data.ilvl > 0 then
-					-- local isHigh = avgItemLvl < data.ilvl
-					row.level:SetFormattedText("%s%s", --[[isHigh and RED_FONT_COLOR_CODE or --]] '', data.ilvl)
+					row.level:SetText(data.ilvl)
 				else
 					local level = ( ns.const.level[ data.level ] or ''):match("%d+$") or ''
 					      level = tonumber(level) or MAX_PLAYER_LEVEL
-					row.level:SetFormattedText("%s%s", --[[(level < playerLevel and GRAY_FONT_COLOR_CODE) or (level > playerLevel and RED_FONT_COLOR_CODE) or--]] '', level ~= math.huge and level or '' )
+					row.level:SetText(level ~= math.huge and level or '' )
 				end
 
-				row.title:SetText(data.title)
+				if data.password then
+					local locked = '|TInterface\\PetBattles\\PetBattle-LockIcon:0|t '
+					row.title:SetText(locked .. data.title)
+				else
+					row.title:SetText(data.title)
+				end
 				row.comment:SetText(data.comment)
 
 				row.group:SetText(data.size)
@@ -446,17 +471,25 @@ example: flex & r:en & l:athene & g:> 9 & w:< 10]]
 				else
 					row.waiting:SetText('')
 				end
-				-- row.group:SetFormattedText("%d/%d/%d", data.group.tank or 0, data.group.heal or 0, data.group.dps or 0)
 
-				if i%2 == 0 then -- .queued
-					row.background:SetVertexColor(0, 0.694, 0.941, 0.3)
-		      	else
-		      		row.background:SetVertexColor(0.588, 0.588, 0.588, 0.3)
+				local status = ns.db.queued[ data.leader ]
+				if status == ns.const.status.PENDING then
+					row.status:SetTexture('Interface\\RaidFrame\\ReadyCheck-Waiting')
+				elseif status == ns.const.status.QUEUED then
+					row.status:SetTexture('Interface\\RaidFrame\\ReadyCheck-Ready')
+				elseif status == ns.const.status.GROUPED then
+					row.status:SetTexture('Interface\\GroupFrame\\UI-Group-LeaderIcon')
+				else
+					row.status:SetTexture(nil)
 				end
 
+				--[[
+				if data.title:lower():find('full') or data.comment:lower():find('full') then
+					--
+				end
+				--]]
+
 				row:Show()
-			else
-				row:Hide()
 			end
 		end
 
@@ -469,9 +502,9 @@ example: flex & r:en & l:athene & g:> 9 & w:< 10]]
 
 	local lastUpdate
 	function ns.UpdateUI(forced)
-		if not _G['CueFrame']:IsVisible() then return end
+		if not _G['CueFrame']:IsVisible() or _G['CueFrame'].pauseUpdates then return end
 		local now = time()
-		if not forced and lastUpdate and now - lastUpdate < 5 then return end
+		if not forced and lastUpdate and now - lastUpdate < UI_UPDATE_DELAY then return end
 		lastUpdate = now
 
 		local numDisplayed, numTotal = UpdateData(list)

@@ -427,6 +427,7 @@ elseif region == 'eu' then
 		["Blackhand"] 			= { id = 191, group = "", locale = "deDE", rp = nil,  pvp = nil },
 		["DunMorogh"] 			= { id = 320, group = "", locale = "deDE", rp = nil,  pvp = nil },
 		["Durotan"] 			= { id = 119, group = "", locale = "deDE", rp = nil,  pvp = nil },
+		["Garrosh"]             = { id = 156, group = "", locale = "deDE", rp = nil,  pvp = nil },
 		["Gilneas"] 			= { id =  65, group = "", locale = "deDE", rp = nil,  pvp = nil },
 		["Kargath"] 			= { id =  67, group = "", locale = "deDE", rp = nil,  pvp = nil },
 		["Lordaeron"] 			= { id = 342, group = "", locale = "deDE", rp = nil,  pvp = nil },
@@ -820,7 +821,6 @@ end
 	"Fizzcrank",--[104]
 	"Galakrond",--[105]
 	"Garithos",--[7]
-	"Garrosh",--[156]
 	"Gorefiend",--[66]
 	"Greymane",--[138]
 	"Hydraxis",--[157]

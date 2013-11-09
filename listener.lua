@@ -79,6 +79,7 @@ local function OnPremade(version, token, ttl, messageType, messageText)
 	premadeCache[leaderInfo].token      = raidToken
 	premadeCache[leaderInfo].faction    = faction
 	premadeCache[leaderInfo].type       = premadeType
+	premadeCache[leaderInfo].password   = (hasPassword and hasPassword ~= 0) and true or false
 	premadeCache[leaderInfo].title      = SanitizeText(premadeTitle)
 	premadeCache[leaderInfo].comment    = SanitizeText(comment)
 	premadeCache[leaderInfo].leader     = leaderInfo
@@ -201,7 +202,7 @@ end
 --]]
 local messageHandler = {
 	["p8"] = OnPremade,
-	["leave_waitlist"] = OnWaitlistLeave,
+	["leave_waitlist"]        = OnWaitlistLeave,
 	["removed_from_waitlist"] = OnWaitlistLeave,
 }
 
@@ -220,6 +221,18 @@ hooksecurefunc("BNSendFriendInvite", function(battleTag, message)
 			OQ_MSGHEADER .."".. OQ_VER ..","..
 			"W1,".."0,".."ri,"..
 			raid_token ..","..tostring(raid.type or 0) ..",".."1,"..req_token ..","..enc_data ..","..stats ..","..oq.encode_pword( pword ) )
+	--]]
+
+	--[[
+BNSendFriendInvite W1 ri
+G8hlBU,R,1,QAPbmw,NjI5MiNsZWFqOzQzMzt5bmFoVAAA,ARBaiIAAAI5BaIioAAAAfTARzBk9AXlAAAAAAAAAAAAAAAAAAAAAAZ,LgAA
+
+BNSendFriendInvite W1 leave_waitlist
+GBALcc,QCuvV9
+BNSendFriendInvite W1 leave_waitlist
+GCVJfR,QCtk81
+BNSendFriendInvite W1 leave_waitlist
+G59thA,QCttw/
 	--]]
 end)
 
