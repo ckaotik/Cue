@@ -9,7 +9,7 @@ local region = string.lower( GetCVar('portal') or '' )
 
 -- required info: realm name, id, battle group, language
 local realmInfo = {}
-function ns.GetRealmInfoFromName(realmName)
+function ns.GetRealmInfoByName(realmName)
 	realmName = gsub(realmName, "%s-%b()", "") -- remove suffixes such as (EU)
 	realmName = gsub(realmName, " ", "")
 
@@ -25,7 +25,7 @@ function ns.GetRealmInfoFromName(realmName)
 	end
 end
 
-function ns.GetRealmInfoFromID(realmID, asTable)
+function ns.GetRealmInfoByID(realmID, asTable)
 	if type(realmID) == "string" then
 		realmID = tonumber(realmID)
 	end
@@ -366,7 +366,7 @@ elseif region == 'eu' then
 		["Varimathras"] 		= { id = 300, group = "", locale = "frFR", rp = nil,  pvp = true },
 		["Ysondre"] 			= { id = 186, group = "", locale = "frFR", rp = nil,  pvp = true },
 
-		["ConfrérieduThorium"] 	= { id = 292, group = "", locale = "frFR", rp = true, pvp = nil },
+		["ConfrérieduThorium"] 	= { id =  20, group = "", locale = "frFR", rp = true, pvp = nil, plain = "ThoriumBrotherhood"}, -- 292 ?
 		["KirinTor"] 			= { id = 201, group = "", locale = "frFR", rp = true, pvp = nil },
 		["LesClairvoyants"] 	= { id = 302, group = "", locale = "frFR", rp = true, pvp = nil },
 		["LesSentinelles"] 		= { id = 297, group = "", locale = "frFR", rp = true, pvp = nil },
@@ -845,7 +845,6 @@ end
 	"TheForgottenCoast",--[54]
 	"TheScryers",--[110]
 	"TheUnderbog",--[111]
-	"ThoriumBrotherhood",--[20]
 	"Tortheldrin",--[166]
 	"Undermine",--[225]
 	"Ursin",--[148]

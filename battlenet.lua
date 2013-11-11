@@ -1,5 +1,9 @@
 local addonName, ns, _ = ...
+
 local BNET_PREFIX = "(OQ)"
+local playerData
+
+-- GLOBALS: BNFeaturesEnabledAndConnected, BNConnected, BNGetInfo, BNGetNumFriends, BNGetFriendInfo, BNSetCustomMessage, BNSendFriendInvite, BNGetFriendInfoByID
 
 -- edits the player's battle.net status to include OQ tag
 function ns.EnableBnetBroadcast()
@@ -26,21 +30,23 @@ function ns.DisableBnetBroadcast()
 	-- if removeAddedFriends then ... end
 end
 
-function ns.IsBnetFriend(searchBattleTag)
-	local presenceID, battleTag, isOnline
+function ns.GetBNFriendInfo(searchBattleTag)
+	local presenceID, battleTag, client, isOnline
 	for i = 1, BNGetNumFriends() do
 		presenceID, _, battleTag, _, _, _, client, isOnline = BNGetFriendInfo(i)
 		if battleTag == searchBattleTag then
-			return presenceID, isOnline
+			return presenceID, isOnline, client == 'WoW'
 		end
 	end
 end
 
 -- send a message across battle.net via private message -or- friend request + note
 function ns.SendBnetMessage(battleTag, message, messageType)
-	if false and IsBNFriend(battleTag) then
-		-- TODO: figure out presenceID if online
-		-- BNSendWhisper(target, message)
+	local presenceID, isOnline, isWoW = ns.GetBNFriendInfo(battleTag)
+	if presenceID then
+		if isWoW then
+			-- BNSendWhisper(presenceID, message)
+		end
 	else
 		-- if not ns.db.sentRequests then ns.db.sentRequests = {} end
 		-- ns.db.sentRequests[battleTag] = (ns.db.sentRequests[battleTag] and ns.db.sentRequests[battleTag] .. ', ' or '') .. messageType
@@ -87,6 +93,29 @@ function ns.JoinQueue(leader, token)
 	end
 
 	-- prepare message
+	if not playerData then
+		local _, battleTag = BNGetInfo()
+		local name, realm = UnitName('player'), GetRealmName('player')
+		playerData = ns.oq.EncodeLeaderData(name, realm, battleTag)
+	end
+
+	--[[
+	oq.realid_msg( raid.leader, raid.leader_realm, raid.leader_rid,
+                   OQ_MSGHEADER ..""..
+                   OQ_VER ..","..
+                   "W1,"..
+                   "0,"..
+                   "ri,"..
+                   raid_token ..","..
+                   tostring(raid.type or 0) ..","..
+                   "1,"..
+                   "Q".. oq.token_gen() ..",".. 		-- request token
+                   playerData ..","..
+                   oq.encode_my_stats( 0, 0, 0, 'A', 'A' ) ..","..
+                   oq.encode_pword( pword )
+                 ) ;
+	--]]
+
 	-- send message
 
 	-- store
@@ -102,7 +131,18 @@ end
 
 -- join a premade group
 function ns.JoinBnetGroup(...)
-	ns.LeaveQueue(leader)
+	--[[-- TODO: do this when receiving friend request leading to invite
+	if IsInGroup(_G.LE_PARTY_CATEGORY_HOME) then
+		if ns.db.leaveExistingGroup then
+			LeaveParty()
+		else
+			ns.Print('You are already in a group.')
+			return
+		end
+	end
+	--]]
+
+	-- ns.LeaveQueue(leader)
 
 	-- if removeFriendOnJoin then ... end
 end
@@ -130,5 +170,27 @@ function ns.PreventBnetSpam()
 				-- BNToastFrame_RemoveToast(toastType, toastData)  -- VOILA!
 			-- end
 		end
+	end)
+
+	-- TODO: remove :)
+	hooksecurefunc('BNSendFriendInvite', function(battleTag, message)
+		local version, token, ttl, messageType, message = ns.GetOQMessageInfo(message)
+		if version then
+			print('BNSendFriendInvite', token, messageType, "\n", message)
+
+			-- token: 		W1
+			-- messageType: ri
+			-- message:		G8hlBU,R,1,QAPbmw,NjI5MiNsZWFqOzQzMzt5bmFoVAAA,ARBaiIAAAI5BaIioAAAAfTARzBk9AXlAAAAAAAAAAAAAAAAAAAAAAZ,LgAA
+
+			-- token: 		W1
+			-- messageType: leave_waitlist
+			-- message:		GBALcc,QCuvV9
+		end
+		--[[
+			oq.realid_msg( raid.leader, raid.leader_realm, raid.leader_rid,
+				OQ_MSGHEADER .."".. OQ_VER ..","..
+				"W1,".."0,".."ri,"..
+				raid_token ..","..tostring(raid.type or 0) ..",".."1,"..req_token ..","..enc_data ..","..stats ..","..oq.encode_pword( pword ) )
+		--]]
 	end)
 end

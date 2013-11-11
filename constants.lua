@@ -6,6 +6,7 @@ ns.const.level = levelRange
 
 local premadeType = {
 	["TYPE_NONE"]      = 'X',
+	["TYPE_MISC"]      = 'M',
 	["TYPE_BG"]        = 'B',
 	["TYPE_RBG"]       = 'A',
 	["TYPE_ARENA"]     = 'a',
@@ -15,9 +16,14 @@ local premadeType = {
 	["TYPE_CHALLENGE"] = 'C',
 	["TYPE_DUNGEON"]   = 'D',
 	["TYPE_RAID"]      = 'R',
-	["TYPE_MISC"]      = 'M',
 }
 ns.const.type = premadeType
+
+function ns.IsPvE(premadeType)
+	return premadeType == ns.const.type.TYPE_QUESTS    or premadeType == ns.const.type.TYPE_SCENARIO
+		or premadeType == ns.const.type.TYPE_CHALLENGE or premadeType == ns.const.type.TYPE_DUNGEON
+		or premadeType == ns.const.type.TYPE_RAID
+end
 
 local premadeTypeLabels = {
 	{ 'TYPE_NONE', UNKNOWN },
@@ -53,6 +59,60 @@ local battlegroundID = {
 	["DKP"]  = 16,
 }
 ns.const.bg = battlegroundID
+
+local RANGED, MELEE, CASTER, TANK = 1, 2, 3, 4
+local specInfo = {
+	[  0] = { id =  0, stats = MELEE  }, -- unspecced
+	[250] = { id =  1, stats = TANK   }, -- deathknight
+	[251] = { id =  2, stats = MELEE  },
+	[252] = { id =  3, stats = MELEE  },
+	[102] = { id =  4, stats = RANGED }, -- druid
+	[103] = { id =  5, stats = RANGED },
+	[104] = { id =  6, stats = TANK   },
+	[105] = { id =  7, stats = CASTER },
+	[253] = { id =  8, stats = RANGED }, -- hunter
+	[254] = { id =  9, stats = RANGED },
+	[255] = { id = 10, stats = RANGED },
+ 	[ 62] = { id = 11, stats = CASTER }, -- mage
+ 	[ 63] = { id = 12, stats = CASTER },
+ 	[ 64] = { id = 13, stats = CASTER },
+	[268] = { id = 14, stats = MELEE  }, -- monk
+	[269] = { id = 15, stats = MELEE  },
+	[270] = { id = 16, stats = MELEE  },
+ 	[ 65] = { id = 17, stats = RANGED }, -- paladin
+ 	[ 66] = { id = 18, stats = TANK   },
+ 	[ 70] = { id = 19, stats = MELEE  },
+	[256] = { id = 20, stats = CASTER }, -- priest
+	[257] = { id = 21, stats = CASTER },
+	[258] = { id = 22, stats = CASTER },
+	[259] = { id = 23, stats = MELEE  }, -- rogue
+	[260] = { id = 24, stats = MELEE  },
+	[261] = { id = 25, stats = MELEE  },
+	[262] = { id = 26, stats = RANGED }, -- shaman
+	[263] = { id = 27, stats = MELEE  },
+	[264] = { id = 28, stats = CASTER },
+	[265] = { id = 29, stats = CASTER }, -- warlock
+	[266] = { id = 30, stats = CASTER },
+	[267] = { id = 31, stats = CASTER },
+ 	[ 71] = { id = 32, stats = MELEE  }, -- warrior
+ 	[ 72] = { id = 33, stats = MELEE  },
+ 	[ 73] = { id = 34, stats = TANK   },
+}
+ns.const.specInfo = specInfo
+
+local playerRaces = {
+	"Dwarf", "Draenei", "Gnome", "Human", "NightElf", "Worgen",
+	"BloodElf",	"Goblin",	"Orc",	"Tauren",	"Troll",	"Scourge",
+	"Pandaren",
+}
+ns.const.playerRaces = playerRaces
+
+-- maps _,_,classID = UnitClass(unit) to OQ tiny class
+local playerTinyClasses = {
+	'K', 'F', 'C', 'H', 'G', 'A', 'I', 'D', 'J', 'E', 'B'
+}
+-- TODO: missing: NONE / XX / L, UNKNOWN / ZZ / N,  / YY / M
+ns.const.playerClasses = playerTinyClasses
 
 --[[ local queueStatus = {
 	[0] = "-", 	 -- 0: none

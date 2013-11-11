@@ -3,6 +3,7 @@ local addonName, ns, _ = ...
 local config = {
 	['CueDB'] = {
 		useBattleNet = false,
+		leaveExistingGroup = false,
 	}
 }
 

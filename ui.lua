@@ -23,8 +23,10 @@ function ns.InitUI()
 		types = {},
 	}
 	local function MatchesFilters(data)
+		if data.faction ~= playerFaction then return nil end
+
 		local name, realm, battleTag = ns.oq.DecodeLeaderData( data.leader )
-		local _, realm, locale = ns.GetRealmInfoFromID(realm)
+		local _, realm, locale = ns.GetRealmInfoByID(realm)
 		local isBlocked = ns.Find(ns.db.blacklist, battleTag) or IsIgnored( realm and name.."-"..realm or name)
 		if isBlocked then return nil end
 
@@ -63,8 +65,6 @@ function ns.InitUI()
 				return nil
 			end
 		end
-
-		return data.faction == playerFaction
 	end
 
 	local function UpdateData(self)
@@ -125,7 +125,7 @@ function ns.InitUI()
 		local leaderName, realm, battleTag = ns.oq.DecodeLeaderData(data.leader)
 		if not realm then return end
 
-		local realmID, realmName, locale, isPvP, isRP, battleGroup = ns.GetRealmInfoFromID(realm)
+		local realmID, realmName, locale, isPvP, isRP, battleGroup = ns.GetRealmInfoByID(realm)
 		if not realmName then print("no realm info found for", realm, leaderName); realmName = '?' end
 
 		tooltip:AddDoubleLine(leaderName, string.format("%s%s%s (%s)",

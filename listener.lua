@@ -202,39 +202,15 @@ end
 --]]
 local messageHandler = {
 	["p8"] = OnPremade,
+	-- ["ri"] = OnWaitlistJoin,
 	["leave_waitlist"]        = OnWaitlistLeave,
 	["removed_from_waitlist"] = OnWaitlistLeave,
 }
 
-local function GetOQMessageInfo(message)
+function ns.GetOQMessageInfo(message)
 	local version, token, ttl, messageType, message = message:match("^OQ,([^,]+),([^,]+),([^,]+),([^,]+),(.-)$")
 	return version, token, ttl, messageType, message
 end
-
-hooksecurefunc("BNSendFriendInvite", function(battleTag, message)
-	local version, token, ttl, messageType, message = message:match("^OQ,([^,]+),([^,]+),([^,]+),([^,]+),(.-)$")
-	if version then
-		print('BNSendFriendInvite', token, messageType, "\n", message)
-	end
-	--[[
-		oq.realid_msg( raid.leader, raid.leader_realm, raid.leader_rid,
-			OQ_MSGHEADER .."".. OQ_VER ..","..
-			"W1,".."0,".."ri,"..
-			raid_token ..","..tostring(raid.type or 0) ..",".."1,"..req_token ..","..enc_data ..","..stats ..","..oq.encode_pword( pword ) )
-	--]]
-
-	--[[
-BNSendFriendInvite W1 ri
-G8hlBU,R,1,QAPbmw,NjI5MiNsZWFqOzQzMzt5bmFoVAAA,ARBaiIAAAI5BaIioAAAAfTARzBk9AXlAAAAAAAAAAAAAAAAAAAAAAZ,LgAA
-
-BNSendFriendInvite W1 leave_waitlist
-GBALcc,QCuvV9
-BNSendFriendInvite W1 leave_waitlist
-GCVJfR,QCtk81
-BNSendFriendInvite W1 leave_waitlist
-G59thA,QCttw/
-	--]]
-end)
 
 -- ================================================
 --  Listen for message & handle appropriately
@@ -244,7 +220,7 @@ ns.RegisterEvent("CHAT_MSG_CHANNEL", function(self, event, ...)
 	local channelName, _, _, senderGUID = select(9, ...)
 	if channelName:lower() ~= "oqgeneral" then return end
 
-	local version, token, ttl, messageType, message = GetOQMessageInfo(...)
+	local version, token, ttl, messageType, message = ns.GetOQMessageInfo(...)
 	if messageHandler[messageType] then
 		messageHandler[messageType](version, token, ttl, messageType, message)
 	end
@@ -254,7 +230,7 @@ local playerName, playerRealm = UnitName("player")
 ns.RegisterEvent("CHAT_MSG_ADDON", function(self, event, prefix, msg, channel, sender)
 	if prefix ~= "OQ" or sender == playerName then return end
 	-- print("CHAT_MSG_ADDON", channel, sender, msg)
-	local version, token, ttl, messageType, message = GetOQMessageInfo(msg)
+	local version, token, ttl, messageType, message = ns.GetOQMessageInfo(msg)
 	-- print(version, token, ttl, messageType, message)
 
 	--[[

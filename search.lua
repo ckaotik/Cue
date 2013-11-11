@@ -24,7 +24,7 @@ Filters.leader = {
 	end,
 	match = function(self, target, _, search)
 		local name, realm, battleTag = ns.oq.DecodeLeaderData( target.leader )
-		local _, realm = ns.GetRealmInfoFromID(realm)
+		local _, realm = ns.GetRealmInfoByID(realm)
 		local data = string.join(' ', name or '', realm or '', battleTag or '')
 		return Search:Find(search, data)
 	end
@@ -36,7 +36,7 @@ Filters.realm = {
 	end,
 	match = function(self, target, _, search)
 		local _, realm = ns.oq.DecodeLeaderData( target.leader )
-		local _, realm, locale = ns.GetRealmInfoFromID(realm)
+		local _, realm, locale = ns.GetRealmInfoByID(realm)
 		local data = string.join(' ', realm or '', locale or '')
 		return Search:Find(search, data)
 	end
@@ -47,7 +47,7 @@ Filters.realmtype = { -- TODO: fixme
 	end,
 	match = function(self, target, _, search)
 		local _, realm = ns.oq.DecodeLeaderData( target.leader )
-		local realm = ns.GetRealmInfoFromID(realm, true)
+		local realm = ns.GetRealmInfoByID(realm, true)
 		return search and realm[search]
 	end,
 	keywords = {
