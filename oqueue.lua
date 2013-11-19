@@ -170,8 +170,7 @@ end
 -- --------------------------------------------------------
 local password = "abc123"
 
-local EncodeLeaderData = -- oq and oq.encode_data and function(data) return oq.encode_data(password, name, realm, battleTag) end or
-function(name, realm, battleTag)
+function ns.oq.EncodeLeaderData(name, realm, battleTag)
 	local realmID = ns.GetRealmInfoByName(realm)
 	local s = strjoin(",", name, realmID, battleTag)
 	      s = s:gsub(',', ';'):reverse()
@@ -181,10 +180,8 @@ function(name, realm, battleTag)
 
 	return encode64(s)
 end
-ns.oq.EncodeLeaderData = EncodeLeaderData
 
-local DecodeLeaderData = -- oq and oq.decode_data and function(data) return oq.decode_data(password, data) end or
-function(data)
+function ns.oq.DecodeLeaderData(data)
 	local s = Decode256(data)
 	      s = s:reverse():gsub(";", ",")
 
@@ -194,7 +191,6 @@ function(data)
 	local name, realm, battleTag = string.split(',', s)
 	return name, realm, battleTag
 end
-ns.oq.DecodeLeaderData = DecodeLeaderData
 
 local GenerateToken = oq and oq.token_gen or
 function()
@@ -259,15 +255,39 @@ local function EncodeStats()
 
 	if ns.IsPvE(premadeType) then
 		local bonus
-		for _, bonusFunc in ipairs(statGetters[OQStatType]) do
-			bonus = bonusFunc('player')
+		for _, statGetter in ipairs(statGetters[OQStatType]) do
+			bonus = statGetter('player')
 			stats = stats .. ns.oq.EncodeNumber64(bonus*100, 3)
 		end
 
-		--[[
 		-- raid progression data
-		if (oq.raid.type == OQ.TYPE_CHALLENGE) then
-		  s = s .."".. oq.get_past_experience() ;
+		if premadeType == ns.const.premadeType.TYPE_CHALLENGE then
+			for _, statistic in ipairs({ 7400, 7401, 7402 }) do
+				stats = stats .. ns.oq.EncodeNumber64((GetStatistic(statistic)), 2)
+			end
+		end
+
+		--[[if (oq.raid.type == OQ.TYPE_CHALLENGE) then
+			local str = "" ;
+			str = str .."".. oq.encode_mime64_2digit( oq.get_medal_count(7400) ) ;
+			str = str .."".. oq.encode_mime64_2digit( oq.get_medal_count(7401) ) ;
+			str = str .."".. oq.encode_mime64_2digit( oq.get_medal_count(7402) ) ;
+
+			-- AA BB CC bbbWWdddmmm
+			-- bosses and wipes
+			local nbosses, nwipes = oq.get_nboss_kills() ;
+				local nbosses = (OQ_data.leader["pve.5man"].nBosses or 0) ;
+				nbosses = nbosses + OQ_data.leader["pve.raid"].nBosses ;
+				nbosses = nbosses + OQ_data.leader["pve.challenge"].nBosses ;
+
+				local nwipes = (OQ_data.leader["pve.5man"].nWipes or 0) ;
+				nwipes = nwipes + (OQ_data.leader["pve.raid"].nWipes or 0) ;
+				nwipes = nwipes + (OQ_data.leader["pve.challenge"].nWipes or 0) ;
+
+			-- return str .."".. oq.encode_mime64_3digit( nbosses            ) ..""..
+			                    oq.encode_mime64_2digit( nwipes             ) ..""..
+			                    oq.encode_mime64_3digit( OQ_data.leader_dkp ) ..""..
+			                    oq.encode_mime64_3digit( OQ_data._dkp       ) ;
 		else
 		  s = s .."".. oq.get_raid_progression() ;
 		end

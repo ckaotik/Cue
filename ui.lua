@@ -65,6 +65,8 @@ function ns.InitUI()
 				return nil
 			end
 		end
+
+		return true
 	end
 
 	local function UpdateData(self)
@@ -321,7 +323,7 @@ example: flex & r:en & l:athene & g:> 9 & w:< 10]]
 		end
 
 		local name, _, battleTag = ns.oq.DecodeLeaderData( self.key )
-		if ns.IsBnetFriend(battleTag) then -- isFriend
+		if ns.GetBNFriendInfo(battleTag) then -- isFriend
 			info.text = _G["WHISPER"]
 			info.func = Whisper
 			info.arg1 = battleTag

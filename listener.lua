@@ -1,5 +1,17 @@
 local addonName, ns, _ = ...
 
+-- GLOBALS: IsInRaid, IsRatedBattleground, InCombatLockdown
+-- GLOBALS: time, date, pairs, wipe, collectgarbage, select, strsplit
+
+local function SanitizeText(text)
+	-- text = text:gsub('[°!"§$%?^*#]', ' ') -- :gsub('[.,+><]+', ' ')
+	text = text:gsub('`´', '\''):gsub('%s+', ' ')
+	-- text = text:lower():gsub('^%l', string.utf8upper):gsub(' %l', string.utf8upper) -- create common capitalization
+	-- text = text:match("^[%p%s]+(.-)[%p%s]-$") or text 	-- snipe away punctuation
+	text = text:trim() 					-- trim spaces, can also supply specific characters for removal
+	return text
+end
+
 function ns.PruneData()
 	-- remove posts older than 2min
 	local outdatedTime = time() - 2*60
@@ -16,13 +28,9 @@ function ns.PruneData()
 	end
 end
 
-local function SanitizeText(text)
-	-- text = text:gsub('[°!"§$%?^*#]', ' ') -- :gsub('[.,+><]+', ' ')
-	text = text:gsub('`´', '\''):gsub('%s+', ' ')
-	-- text = text:lower():gsub('^%l', string.utf8upper):gsub(' %l', string.utf8upper) -- create common capitalization
-	-- text = text:match("^[%p%s]+(.-)[%p%s]-$") or text 	-- snipe away punctuation
-	text = text:trim() 					-- trim spaces, can also supply specific characters for removal
-	return text
+function ns.GetOQMessageInfo(message)
+	local version, token, ttl, messageType, message = message:match("^OQ,([^,]+),([^,]+),([^,]+),([^,]+),(.-)$")
+	return version, token, ttl, messageType, message
 end
 
 local function OnPremade(version, token, ttl, messageType, messageText)
@@ -46,7 +54,7 @@ local function OnPremade(version, token, ttl, messageType, messageText)
 		return ''
 	end)
 
-	local raidToken, premadeTitle, premadeInfo, leaderInfo, comment, premadeType, groupData, leaderExperience = string.split(",", message)
+	local raidToken, premadeTitle, premadeInfo, leaderInfo, comment, premadeType, groupData, leaderExperience = strsplit(",", message)
 	local faction, hasPassword, realmSpecific, is_source, level, iLvl, resilience, numMembers, numWaiting, status, msgTime, minMMR = ns.oq.DecodePremadeInfo(premadeInfo)
 	-- a message from the future!
 	if msgTime > time() + 4*24*60 then return end
@@ -106,8 +114,8 @@ local function OnPremade(version, token, ttl, messageType, messageText)
 end
 
 local function OnWaitlistJoin(...)
-	if not ns.db.queues then ns.db.queues = {} end
-	-- add battleTag + reason to db
+	-- if not ns.db.queued[ battleTag ] then ns.db.queued[ battleTag ] = {} end
+	-- add battleTag + reason/note to db
 end
 
 local function OnWaitlistLeave(raidToken, reqToken)
@@ -206,11 +214,6 @@ local messageHandler = {
 	["leave_waitlist"]        = OnWaitlistLeave,
 	["removed_from_waitlist"] = OnWaitlistLeave,
 }
-
-function ns.GetOQMessageInfo(message)
-	local version, token, ttl, messageType, message = message:match("^OQ,([^,]+),([^,]+),([^,]+),([^,]+),(.-)$")
-	return version, token, ttl, messageType, message
-end
 
 -- ================================================
 --  Listen for message & handle appropriately
