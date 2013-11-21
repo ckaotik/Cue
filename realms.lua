@@ -430,6 +430,7 @@ elseif region == 'eu' then
 		["Garrosh"]             = { id = 156, group = "", locale = "deDE", rp = nil,  pvp = nil },
 		["Gilneas"] 			= { id =  65, group = "", locale = "deDE", rp = nil,  pvp = nil },
 		["Kargath"] 			= { id =  67, group = "", locale = "deDE", rp = nil,  pvp = nil },
+		["Khaz'goroth"] 		= { id =  85, group = "", locale = "deDe", rp = nil,  pvp = nil },
 		["Lordaeron"] 			= { id = 342, group = "", locale = "deDE", rp = nil,  pvp = nil },
 		["Lothar"] 				= { id = 121, group = "", locale = "deDE", rp = nil,  pvp = nil },
 		["Madmortem"] 			= { id = 310, group = "", locale = "deDE", rp = nil,  pvp = nil },

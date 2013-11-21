@@ -1,4 +1,5 @@
 local addonName, ns, _ = ...
+local DATA_TIMEOUT = 2*60
 
 -- GLOBALS: IsInRaid, IsRatedBattleground, InCombatLockdown
 -- GLOBALS: time, date, pairs, wipe, collectgarbage, select, strsplit
@@ -14,7 +15,7 @@ end
 
 function ns.PruneData()
 	-- remove posts older than 2min
-	local outdatedTime = time() - 2*60
+	local outdatedTime = time() - DATA_TIMEOUT
 	for token, info in pairs(ns.db.premadeCache) do
 		if info.updated < outdatedTime then
 			wipe(info)
@@ -34,14 +35,9 @@ function ns.GetOQMessageInfo(message)
 end
 
 local function OnPremade(version, token, ttl, messageType, messageText)
-	-- FIXME: not all messages include realm/from/...
-	if not messageText then
-		print("premade missing message", version, token, ttl, messageType, messageText)
-		return
-	end
-
 	local sender, targetName, targetRealm
 	-- local message, to, realm, from = messageText:match("^(.-),#to:([^,]+),#rlm:([^,]+),#fr:([^,]+)$")
+	-- TODO: FIXME: re-creating functions on every premade/disband is really bad
 	local message = messageText:gsub('(,#([^:]+):([^,]+))', function(field, key, value)
 		-- remove all fields from messsage string, but store their values
 		if key == 'to' then
@@ -78,9 +74,7 @@ local function OnPremade(version, token, ttl, messageType, messageText)
 		dps 	= dps    == '-' and 0 or ns.oq.DecodeDigit(dps)
 	end
 
-	if not ns.db.premadeCache then ns.db.premadeCache = {} end
 	local premadeCache = ns.db.premadeCache
-
 	-- use leader as unique key, as every player can only ever have one premade to his or her name
 	premadeCache[leaderInfo] = premadeCache[leaderInfo] or {}
 	if premadeCache[leaderInfo].updated and premadeCache[leaderInfo].updated > msgTime then return end
@@ -104,13 +98,38 @@ local function OnPremade(version, token, ttl, messageType, messageText)
 	premadeCache[leaderInfo].group.heal = heal
 	premadeCache[leaderInfo].group.dps  = dps
 
-	-- print(groupData, string.format("%d |4tank:tanks;, %d |4healer:healers;, %d |4dps:dps;", tank, heal, dps))
-	--[[ print('premade', premadeType, faction, SanitizeText(premadeTitle), '/', SanitizeText(comment), '/', dps, heal, tank, '/', level, iLvl, "\n",
-		numMembers..' in group,', numWaiting..' waiting,',
-		"\n Leader:", leaderName, realm, battleTag, leaderExperience,
-		"\n", msgTime, status, minMMR, realmSpecific, hasPassword) --]]
-
 	ns.UpdateUI()
+end
+
+local function OnDisband(version, token, ttl, messageType, messageText)
+	local raidToken, msgToken, targetName, targetRealm, sender = strsplit(",", messageText)
+	targetName  = targetName  and string.sub(targetName, 5)
+	targetRealm = targetRealm and string.sub(targetRealm, 6)
+	sender      = sender      and string.sub(sender, 5)
+
+	local leaderName, leaderRealm, removed
+	for leader, data in pairs(ns.db.premadeCache) do
+		if data.token == raidToken then
+			wipe(ns.db.premadeCache[leader])
+			ns.db.premadeCache[leader] = nil
+
+			removed = true
+			break
+		elseif sender and sender ~= '' then
+			leaderName, leaderRealm = ns.oq.DecodeLeaderData(leader)
+			if leaderName..'-'..leaderRealm == sender then
+				wipe(ns.db.premadeCache[leader])
+				ns.db.premadeCache[leader] = nil
+
+				removed = true
+				break
+			end
+		end
+	end
+
+	if not removed then
+		--
+	end
 end
 
 local function OnWaitlistJoin(...)
@@ -210,6 +229,7 @@ end
 --]]
 local messageHandler = {
 	["p8"] = OnPremade,
+	["disband"] = OnDisband,
 	-- ["ri"] = OnWaitlistJoin,
 	["leave_waitlist"]        = OnWaitlistLeave,
 	["removed_from_waitlist"] = OnWaitlistLeave,
@@ -224,40 +244,36 @@ ns.RegisterEvent("CHAT_MSG_CHANNEL", function(self, event, ...)
 	if channelName:lower() ~= "oqgeneral" then return end
 
 	local version, token, ttl, messageType, message = ns.GetOQMessageInfo(...)
-	if messageHandler[messageType] then
+	if messageType and messageHandler[messageType] then
 		messageHandler[messageType](version, token, ttl, messageType, message)
 	end
 end, "oq_msg_channel")
 
-local playerName, playerRealm = UnitName("player")
+ns.RegisterEvent("CHAT_MSG_BN_WHISPER", function(self, event, ...)
+	if InCombatLockdown() or IsInRaid() or IsRatedBattleground() then return end
+	local chatMessage = ...
+	local presenceID  = select(13, ...)
+
+	local version, token, ttl, messageType, message = ns.GetOQMessageInfo(chatMessage)
+	if messageType and messageHandler[messageType] then
+		messageHandler[messageType](version, token, ttl, messageType, message)
+	end
+end, "oq_msg_bnet")
+
 ns.RegisterEvent("CHAT_MSG_ADDON", function(self, event, prefix, msg, channel, sender)
-	if prefix ~= "OQ" or sender == playerName then return end
-	-- print("CHAT_MSG_ADDON", channel, sender, msg)
+	if prefix ~= "OQ" or sender == ns.playerName then return end
+
 	local version, token, ttl, messageType, message = ns.GetOQMessageInfo(msg)
-	-- print(version, token, ttl, messageType, message)
-
-	--[[
-	channel: RAID
-	message: 0Z RzcofK GywCPw stats Tîesto,263,KRBawJBAAKVBfIhoJecARtAgyCbYAkUAAAAAAAAAAAAAAAAAAAAAAZ,dimitris#2322
-	--]]
-
-	--[[ if ((prefix ~= "OQ") or (sender == player_name)) or ((msg == nil) or (msg == "")) then
-		resilienceturn ;
+	if messageType and messageHandler[messageType] then
+		messageHandler[messageType](version, token, ttl, messageType, message)
 	end
-	if ((channel == "WHISPER") and oq.iam_party_leader() and (sender == oq.raid.leader) and (not OQ_toon.disabled)) then
-		-- from the leader and i'm party leader, send only to my party
-		oq.SendAddonMessage( "OQ", msg, "PARTY" ) ;
-	end
-
-	-- just process, do not send it on
-	_local_msg = true ;
-	_source    = "addon" ;
-	if (channel == "PARTY") then
-		_source = "party" ;
-	end
-	_ok2relay  = nil ;
-	oq._sender = sender ;
-
-	oq.process_msg( sender, msg ) ;
-	oq.post_process() ; --]]
 end, "oq_msg_addon")
+
+-- probably also BN_FRIEND_INVITE_LIST_INITIALIZED
+ns.RegisterEvent("BN_FRIEND_INVITE_ADDED", function(self, event, ...)
+	print('new friend request', ...)
+	for i = BNGetNumFriendInvites(), 1 do
+		-- local presenceId, name, surname, message, timeSent, days = BNGetFriendInviteInfo(i)
+		print('friend', i, BNGetFriendInviteInfo(i))
+	end
+end, "newfriendreq")

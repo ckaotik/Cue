@@ -1,4 +1,6 @@
 local addonName, ns, _ = ...
+ns.OQversion = '0Z'
+ns.OQmaxPosts = 5
 ns.const = {}
 
 local levelRange = { "unavailable", "10 - 14", "15 - 19", "20 - 24", "25 - 29", "30 - 34", "35 - 39", "40 - 44", "45 - 49", "50 - 54", "55 - 59", "60 - 64", "65 - 69", "70 - 74", "75 - 79", "80 - 84", "85", "85 - 89", "90" }
@@ -19,28 +21,37 @@ local premadeType = {
 }
 ns.const.type = premadeType
 
-function ns.IsPvE(premadeType)
-	return premadeType == ns.const.type.TYPE_QUESTS    or premadeType == ns.const.type.TYPE_SCENARIO
-		or premadeType == ns.const.type.TYPE_CHALLENGE or premadeType == ns.const.type.TYPE_DUNGEON
-		or premadeType == ns.const.type.TYPE_RAID
-end
-
 local premadeTypeLabels = {
-	{ 'TYPE_NONE', UNKNOWN },
-	{ 'TYPE_MISC', MISCELLANEOUS },
-	{ '', PLAYER_V_PLAYER},
-	{ 'TYPE_BG', BATTLEFIELDS },
-	{ 'TYPE_RBG', PVP_RATED_BATTLEGROUNDS },
-	{ 'TYPE_ARENA', ARENA },
-	{ 'TYPE_LADDER', RANKING },
-	{ '', INSTANCE },
-	{ 'TYPE_QUESTS', LFG_TYPE_QUEST },
-	{ 'TYPE_SCENARIO', GUILD_CHALLENGE_TYPE4 },
-	{ 'TYPE_CHALLENGE', CHALLENGES },
-	{ 'TYPE_DUNGEON', LFG_TYPE_DUNGEON }, -- GUILD_CHALLENGE_TYPE1
-	{ 'TYPE_RAID', LFG_TYPE_RAID },    -- GUILD_CHALLENGE_TYPE2
+	[premadeType.TYPE_NONE]      = UNKNOWN,
+	[premadeType.TYPE_MISC]      = MISCELLANEOUS,
+	[premadeType.TYPE_BG]        = BATTLEFIELDS,
+	[premadeType.TYPE_RBG]       = PVP_RATED_BATTLEGROUNDS,
+	[premadeType.TYPE_ARENA]     = ARENA,
+	[premadeType.TYPE_LADDER]    = RANKING,
+	[premadeType.TYPE_QUESTS]    = LFG_TYPE_QUEST,
+	[premadeType.TYPE_SCENARIO]  = GUILD_CHALLENGE_TYPE4,
+	[premadeType.TYPE_CHALLENGE] = CHALLENGES,
+	[premadeType.TYPE_DUNGEON]   = LFG_TYPE_DUNGEON, -- GUILD_CHALLENGE_TYPE1
+	[premadeType.TYPE_RAID]      = LFG_TYPE_RAID,    -- GUILD_CHALLENGE_TYPE2
 }
 ns.const.typeLabels = premadeTypeLabels
+
+local premadeTypeDropdownLabels = {
+	{ premadeType.TYPE_NONE, UNKNOWN },
+	{ premadeType.TYPE_MISC, MISCELLANEOUS },
+	{ '', PLAYER_V_PLAYER},
+	{ premadeType.TYPE_BG, BATTLEFIELDS },
+	{ premadeType.TYPE_RBG, PVP_RATED_BATTLEGROUNDS },
+	{ premadeType.TYPE_ARENA, ARENA },
+	{ premadeType.TYPE_LADDER, RANKING },
+	{ '', INSTANCE },
+	{ premadeType.TYPE_QUESTS, LFG_TYPE_QUEST },
+	{ premadeType.TYPE_SCENARIO, GUILD_CHALLENGE_TYPE4 },
+	{ premadeType.TYPE_CHALLENGE, CHALLENGES },
+	{ premadeType.TYPE_DUNGEON, LFG_TYPE_DUNGEON }, -- GUILD_CHALLENGE_TYPE1
+	{ premadeType.TYPE_RAID, LFG_TYPE_RAID },    -- GUILD_CHALLENGE_TYPE2
+}
+ns.const.typeDropdownLabels = premadeTypeDropdownLabels
 
 local battlegroundID = {
 	["RND"]  =  0,
@@ -61,7 +72,7 @@ local battlegroundID = {
 ns.const.bg = battlegroundID
 
 local RANGED, MELEE, CASTER, TANK = 1, 2, 3, 4
-local specInfo = {
+local specInfo = { -- this data is horribly incorrect and rather useless, but we need to retain oQ compatibility
 	[  0] = { id =  0, stats = MELEE  }, -- unspecced
 	[250] = { id =  1, stats = TANK   }, -- deathknight
 	[251] = { id =  2, stats = MELEE  },
@@ -102,7 +113,7 @@ ns.const.specInfo = specInfo
 
 local playerRaces = {
 	"Dwarf", "Draenei", "Gnome", "Human", "NightElf", "Worgen",
-	"BloodElf",	"Goblin",	"Orc",	"Tauren",	"Troll",	"Scourge",
+	"BloodElf", "Goblin", "Orc", "Tauren", "Troll", "Scourge",
 	"Pandaren",
 }
 ns.const.playerRaces = playerRaces

@@ -32,6 +32,7 @@ libs\CustomSearch-1.0\CustomSearch-1.0.lua
 # constants
 realms.lua
 constants.lua
+stats.lua
 oqueue.lua
 
 # main files

@@ -1,7 +1,6 @@
 local addonName, ns, _ = ...
 
 local BNET_PREFIX = "(OQ)"
-local playerData
 
 -- GLOBALS: BNFeaturesEnabledAndConnected, BNConnected, BNGetInfo, BNGetNumFriends, BNGetFriendInfo, BNSetCustomMessage, BNSendFriendInvite, BNGetFriendInfoByID
 
@@ -13,7 +12,7 @@ function ns.EnableBnetBroadcast()
 	if broadcastText == "" then
 		BNSetCustomMessage(BNET_PREFIX)
 	elseif not broadcastText:find(BNET_PREFIX) then
-		BNSetCustomMessage( BNET_PREFIX .. " " .. broadcastText:trim() )
+		BNSetCustomMessage(BNET_PREFIX .. " " .. broadcastText:trim())
 	end
 end
 
@@ -30,7 +29,7 @@ function ns.DisableBnetBroadcast()
 	-- if removeAddedFriends then ... end
 end
 
-function ns.GetBNFriendInfo(searchBattleTag)
+function ns.GetBnetFriendInfo(searchBattleTag)
 	local presenceID, battleTag, client, isOnline
 	for i = 1, BNGetNumFriends() do
 		presenceID, _, battleTag, _, _, _, client, isOnline = BNGetFriendInfo(i)
@@ -42,84 +41,64 @@ end
 
 -- send a message across battle.net via private message -or- friend request + note
 function ns.SendBnetMessage(battleTag, message, messageType)
-	local presenceID, isOnline, isWoW = ns.GetBNFriendInfo(battleTag)
+	local presenceID, isOnline, isWoW = ns.GetBnetFriendInfo(battleTag)
 	if presenceID then
-		if isWoW then
+		if isOnline and isWoW then
 			-- BNSendWhisper(presenceID, message)
 		end
 	else
-		-- if not ns.db.sentRequests then ns.db.sentRequests = {} end
-		-- ns.db.sentRequests[battleTag] = (ns.db.sentRequests[battleTag] and ns.db.sentRequests[battleTag] .. ', ' or '') .. messageType
+		-- TODO: FIXME: trashes tables
+		table.insert(ns.db.bntracking, { battleTag, messageType, message })
 		BNSendFriendInvite(battleTag, message)
 	end
 end
 
---[[
-	-- if same target name & realm, will whisper
-	-- if no target, but same realm, use oqgeneral channel
-	function oq.realid_msg( to_name, to_realm, real_id, msg )
-	  if (msg == nil) then
-	    return ;
-	  end
-	  local rc = 0 ;
-	  if ((to_name == nil) or (to_name == "-") or (to_realm == nil)) then
-	    return ;
-	  end
-	  if ((to_name == player_name) and (to_realm == player_realm)) then
-	    -- sending to myself?
-	    return ;
-	  end
-	  if (not oq.well_formed_msg( msg )) then
-	      local msg_tok = "W".. oq.token_gen() ;
-	      oq.token_push( msg_tok ) ;
-	      msg = "OQ,"..
-	            OQ_VER ..","..
-	            msg_tok ..","..
-	            OQ_TTL ..","..
-	            msg ;
-	  end
+-- battleTag or playerName, realmName if not bTag, messageType, message, token, ttl
+-- target, targetRealm, 'ri', message, 'W1', 0
+function ns.SendMessage(target, targetRealm, messageType, message, token, ttl)
+	if not target or not message then return end
+	-- if string.find(target, '#') then
+	-- if not message or not target or not to_realm or to_name == '-' or (to_name == ns.playerName and to_realm == ns.playerRealm) then
 
-	  if (to_realm == player_realm) then
-	    oq.SendAddonMessage( "OQ", msg, "WHISPER", to_name ) ;
-	    return ;
-	  end
+	local fullMessage = strjoin(',', 'OQ', ns.OQversion, token or ns.oq.GenerateToken('W'), messageType, ttl or ns.OQmaxPosts, message)
+	if not targetRealm or targetRealm == ns.playerRealm then
+		SendAddonMessage("OQ", fullMessage, "WHISPER", target)
+	else
+		ns.SendBnetMessage(target, fullMessage, messageType)
 	end
---]]
+end
 
-function ns.JoinQueue(leader, token)
-	if ns.db.queued[leader] and ns.db.queued[leader] == ns.const.status.PENDING then
+local playerData
+function ns.JoinQueue(leader, password)
+	if ns.db.queued[leader] and ns.db.queued[leader] > ns.const.status.NONE then
 		-- we already requested wait list slot
 		return
 	end
 
-	-- prepare message
-	if not playerData then
-		local _, battleTag = BNGetInfo()
-		local name, realm = UnitName('player'), GetRealmName('player')
-		playerData = ns.oq.EncodeLeaderData(name, realm, battleTag)
+	local target, targetRealm, battleTag = ns.oq.DecodeLeaderData(leader)
+	if targetRealm == ns.playerRealm then
+		if target == ns.playerName then return end
+		targetRealm = nil
+	else
+		target = battleTag
 	end
 
-	--[[
-	oq.realid_msg( raid.leader, raid.leader_realm, raid.leader_rid,
-                   OQ_MSGHEADER ..""..
-                   OQ_VER ..","..
-                   "W1,"..
-                   "0,"..
-                   "ri,"..
-                   raid_token ..","..
-                   tostring(raid.type or 0) ..","..
-                   "1,"..
-                   "Q".. oq.token_gen() ..",".. 		-- request token
-                   playerData ..","..
-                   oq.encode_my_stats( 0, 0, 0, 'A', 'A' ) ..","..
-                   oq.encode_pword( pword )
-                 ) ;
-	--]]
+	-- prepare message
+	if not playerData then
+		playerData = ns.oq.EncodeLeaderData(ns.playerName, ns.playerRealm, ns.playerBattleTag)
+	end
+
+	local premadeType = ns.db.premadeCache[leader].type
+	local playerStats = ns.EncodeStats(premadeType)
+	local password    = ns.oq.EncodePassword(password)
+	local groupSize   = 1 -- GetNumGroupMembers()
+
+	local message     = strjoin(',', ns.db.premadeCache[leader].token, premadeType, groupSize, ns.oq.GenerateToken('Q'), playerData, playerStats, password)
 
 	-- send message
-
-	-- store
+	ns.SendMessage(target, targetRealm, 'ri', message, 'W1', 0)
 	ns.db.queued[leader] = ns.const.status.PENDING
+	ns.UpdateUI(true)
 end
 
 function ns.LeaveQueue(leader, announce)
@@ -176,7 +155,7 @@ function ns.PreventBnetSpam()
 	hooksecurefunc('BNSendFriendInvite', function(battleTag, message)
 		local version, token, ttl, messageType, message = ns.GetOQMessageInfo(message)
 		if version then
-			print('BNSendFriendInvite', token, messageType, "\n", message)
+			print('BNSendFriendInvite', token, ttl, messageType, "\n", message)
 
 			-- token: 		W1
 			-- messageType: ri

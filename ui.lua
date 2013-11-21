@@ -34,8 +34,8 @@ function ns.InitUI()
 		local premadeType = data.type
 		if ns.Count( filters.types ) > 0 then
 			local pass = false
-			for filter, _ in pairs(filters.types) do
-				if ns.const.type[ filter ] == premadeType then
+			for filterType, _ in pairs(filters.types) do
+				if filterType == premadeType then
 					pass = true
 					break
 				end
@@ -130,6 +130,7 @@ function ns.InitUI()
 		local realmID, realmName, locale, isPvP, isRP, battleGroup = ns.GetRealmInfoByID(realm)
 		if not realmName then print("no realm info found for", realm, leaderName); realmName = '?' end
 
+		tooltip:AddLine(ns.const.typeLabels[data.type])
 		tooltip:AddDoubleLine(leaderName, string.format("%s%s%s (%s)",
 			isRP and '' or '',
 			isPvP and "|TInterface\\TargetingFrame\\UI-TargetingFrame-Skull:0|t" or '',
@@ -172,16 +173,12 @@ function ns.InitUI()
 	-- header inset, containing filters
 	local header = CreateFrame("Frame", "$parentHeader", frame, "InsetFrameTemplate")
 	header:SetPoint("TOPLEFT", 2, -20)
-	header:SetPoint("BOTTOMRIGHT", "$parent", "TOPRIGHT", -4, -20 - 66)
+	header:SetPoint("BOTTOMRIGHT", "$parent", "TOPRIGHT", -4, -20 - 42)
 	header:SetFrameLevel(1) -- move below portrait level
 
 	-- filters
-	local headerText = header:CreateFontString(nil, nil, "GameFontNormalLarge")
-	      headerText:SetPoint("TOPLEFT", 58, -6)
-	      headerText:SetText(_G['FILTERS'])
-
 	local qualified = CreateFrame("CheckButton", nil, header, "UICheckButtonTemplate")
-	      qualified:SetPoint("BOTTOMLEFT", 6, 2)
+	      qualified:SetPoint("TOPLEFT", 58, -8)
 	      qualified:SetSize(24, 24)
 	      qualified.text:SetText(_G['AVAILABLE'])
 	qualified:SetScript("OnClick", function(self, btn)
@@ -191,8 +188,8 @@ function ns.InitUI()
 
 	local typeDropDown = CreateFrame("Frame", "$parentPremadeDropDown", header, "UIDropDownMenuTemplate")
 	      typeDropDown:SetPoint("TOPRIGHT", -36, -6)
-	UIDropDownMenu_SetText(typeDropDown, _G['LFG_TITLE'] .. '...')
-	UIDropDownMenu_SetWidth(typeDropDown, 140, 0)
+	UIDropDownMenu_SetText(typeDropDown, '')	-- _G['LFG_TITLE'] .. '...'
+	UIDropDownMenu_SetWidth(typeDropDown, 8, 0) -- 140, 0
 
 	local function ToggleType(self)
 		filters.types[ self.value ] = not filters.types[ self.value ] and true or nil
@@ -205,8 +202,9 @@ function ns.InitUI()
 		      info.func         = ToggleType
 		      info.keepShownOnClick = true
 
-		for _, data in ipairs(ns.const.typeLabels) do
-			if data[1] == '' then
+		for _, data in ipairs(ns.const.typeDropdownLabels) do
+			local value, text = data[1], data[2]
+			if value == '' then
 				info.isTitle = true
 				info.notCheckable = true
 				info.value    = nil
@@ -214,16 +212,17 @@ function ns.InitUI()
 				info.isTitle  = nil
 				info.disabled = nil
 				info.notCheckable = nil
-				info.checked  = filters.types[ data[1] ]
-				info.value    = data[1]
+				info.checked  = filters.types[value]
+				info.value    = value
 			end
-			info.text     = data[2]
+			info.text = text
 			UIDropDownMenu_AddButton(info, lvl)
 		end
 	end
 
 	local searchbox = CreateFrame("EditBox", "$parentSearchBox", header, "SearchBoxTemplate")
-		searchbox:SetPoint("TOPRIGHT", typeDropDown, "BOTTOMRIGHT", 34, 2)
+		searchbox:SetPoint("RIGHT", typeDropDown, "LEFT", 20, 2)
+		searchbox:SetFrameLevel(searchbox:GetFrameLevel() + 1)
 		searchbox:SetSize(150, 20)
 		searchbox:SetScript("OnEnterPressed", EditBox_ClearFocus)
 		searchbox:SetScript("OnEscapePressed", function(self)
@@ -323,7 +322,7 @@ example: flex & r:en & l:athene & g:> 9 & w:< 10]]
 		end
 
 		local name, _, battleTag = ns.oq.DecodeLeaderData( self.key )
-		if ns.GetBNFriendInfo(battleTag) then -- isFriend
+		if ns.GetBnetFriendInfo(battleTag) then -- isFriend
 			info.text = _G["WHISPER"]
 			info.func = Whisper
 			info.arg1 = battleTag
@@ -353,6 +352,8 @@ example: flex & r:en & l:athene & g:> 9 & w:< 10]]
 			-- store selected info
 			_G['CueFrame'].pauseUpdates = (numSelected > 0)
 			--]]
+			local leader = self:GetParent().key
+			ns.JoinQueue(leader) -- TODO: ask for password if needed
 		end
 	end
 
@@ -362,80 +363,134 @@ example: flex & r:en & l:athene & g:> 9 & w:< 10]]
 		row:SetHeight(rowHeight)
 		row:Hide()
 
+		local alpha = 0.35
 		local background = row:CreateTexture(nil, "BACKGROUND")
 		      background:SetPoint("TOPLEFT", row, "TOPLEFT")
 		      background:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", 0, 2)
-		      background:SetTexture(0.588, 0.588, 0.588, 0.3)
+		      background:SetTexture(0.588, 0.588, 0.588, alpha)
 		row.background = background
 
 		row:SetPoint("RIGHT", list, "RIGHT", 2, 0)
 		if i == 1 then
 			row:SetPoint("TOPLEFT", list, "TOPLEFT")
-			background:SetVertexColor(0.588, 0.588, 0.588, 0.3)
+			background:SetVertexColor(0.588, 0.588, 0.588, alpha)
 		else
 			row:SetPoint("TOPLEFT", list.buttons[i-1], "BOTTOMLEFT", 0, 0)
 			if i%2 == 0 then
-				background:SetVertexColor(0, 0.694, 0.941, 0.3)
+				background:SetVertexColor(0, 0.694, 0.941, alpha)
 			else
-				background:SetVertexColor(0.588, 0.588, 0.588, 0.3)
+				background:SetVertexColor(0.588, 0.588, 0.588, alpha)
 			end
 		end
 
-		row:RegisterForClicks("AnyUp")
+		row:RegisterForClicks("RightButtonUp") -- AnyUp
 		row:SetScript("OnClick", PremadeOnClick)
 		row:SetScript("OnEnter", ns.ShowTooltip)
 		row:SetScript("OnLeave", ns.HideTooltip)
 		row.tiptext = ShowPremadeTooltip
 
 		local level = row:CreateFontString(nil, nil, "GameFontHighlight")
-		      level:SetPoint("LEFT", 2, 0)
+		      level:SetPoint("TOPLEFT",    2, -2)
+		      level:SetPoint("BOTTOMLEFT", 2,  2)
 		      level:SetWidth(34)
 		      level:SetJustifyH("CENTER")
 		row.level = level
 
-		local title = row:CreateFontString(nil, nil, "FriendsFont_Normal") -- GameFontHighlight")
-		      title:SetPoint("LEFT", level, "RIGHT", 4, 0)
-		      title:SetPoint("TOP", row, 0, -3)
+		local title = row:CreateFontString(nil, nil, "FriendsFont_Normal")
+		      title:SetPoint("TOPLEFT",   level, "TOPRIGHT", 4, 0)
+		      title:SetWidth(200)
 		      title:SetJustifyH("LEFT")
-		      title:SetSize(200, 12)
 		row.title = title
 
-		local comment = row:CreateFontString(nil, nil, "FriendsFont_Small") -- GameFontHighlight")
-		      comment:SetPoint("TOPLEFT",  title, "BOTTOMLEFT",  0, -2)
-		      comment:SetPoint("TOPRIGHT", title, "BOTTOMRIGHT", 0, -2)
+		local comment = row:CreateFontString(nil, nil, "FriendsFont_Small")
+		      comment:SetPoint("BOTTOMLEFT",   level, "BOTTOMRIGHT", 4, 0)
+		      comment:SetWidth(200)
 		      comment:SetJustifyH("LEFT")
-		      comment:SetHeight(10)
 		      comment:SetVertexColor(0.486, 0.518, 0.541)
 		row.comment = comment
 
-		local waiting = row:CreateFontString(nil, nil, "GameFontHighlight")
-		      waiting:SetPoint("TOPLEFT", title, "TOPRIGHT", 4, 0)
-		      waiting:SetPoint("BOTTOM", 0, 2)
-		      waiting:SetJustifyH("LEFT")
-		      waiting:SetWidth(36)
-		row.waiting = waiting
+		-- have title claim full height if no comment available
+		title:SetPoint("BOTTOM", comment, "TOP")
 
-		local group = row:CreateFontString(nil, nil, "GameFontHighlight")
-		      group:SetPoint("TOPLEFT",    waiting, "TOPRIGHT",    4, 0)
-		      group:SetPoint("BOTTOMLEFT", waiting, "BOTTOMRIGHT", 4, 0)
-		      group:SetPoint("RIGHT")
-		      group:SetJustifyH("CENTER")
+		local group = row:CreateFontString(nil, nil, "FriendsFont_Normal")
+		      group:SetPoint("TOPLEFT", title, "TOPRIGHT", 4, 0)
+		      group:SetWidth(40)
 		row.group = group
 
+		local waiting = row:CreateFontString(nil, nil, "FriendsFont_Small")
+		      waiting:SetPoint("BOTTOMLEFT", comment, "BOTTOMRIGHT", 4, 0)
+		      waiting:SetWidth(40)
+		      waiting:SetVertexColor(0.486, 0.518, 0.541)
+		row.waiting = waiting
+
+		-- have group claim full height if no one is waiting
+		group:SetPoint("BOTTOM", waiting, "TOP")
+
 		local status = row:CreateTexture(nil, "BACKGROUND")
-		      status:SetPoint("TOPLEFT", waiting, "TOPLEFT", -4 - 20, 0)
-		      status:SetPoint("BOTTOMRIGHT", row, "BOTTOMLEFT", -4, 0)
+		      status:SetPoint("TOPRIGHT", title, "TOPRIGHT", 0, 0)
+		      status:SetSize(20, 20)
 		row.status = status
+
+		local actionButton = CreateFrame("Button", nil, row)
+		      actionButton:SetPoint("RIGHT", 4, 1)
+		      actionButton:SetSize(24, 32)
+		      actionButton:SetNormalTexture("Interface\\FriendsFrame\\TravelPass-Invite")
+		      actionButton:GetNormalTexture():SetTexCoord(0.01562500, 0.39062500, 0.27343750, 0.52343750)
+		      actionButton:SetPushedTexture("Interface\\FriendsFrame\\TravelPass-Invite")
+		      actionButton:GetPushedTexture():SetTexCoord(0.42187500, 0.79687500, 0.27343750, 0.52343750)
+		      actionButton:SetDisabledTexture("Interface\\FriendsFrame\\TravelPass-Invite")
+		      actionButton:GetDisabledTexture():SetTexCoord(0.01562500, 0.39062500, 0.00781250, 0.25781250)
+		      actionButton:SetHighlightTexture("Interface\\FriendsFrame\\TravelPass-Invite")
+		      actionButton:GetHighlightTexture():SetTexCoord(0.42187500, 0.79687500, 0.00781250, 0.25781250)
+		row.button = actionButton
+
+		actionButton:RegisterForClicks("LeftButtonUp")
+		actionButton:SetScript("OnClick", PremadeOnClick)
+		actionButton:SetScript("OnEnter", ns.ShowTooltip)
+		actionButton:SetScript("OnLeave", ns.HideTooltip)
+		actionButton.tiptext = _G.JOIN
+
+		--[[
+<Button name="$parentTravelPassButton" hidden="true" motionScriptsWhileDisabled="true" parentKey="travelPassButton">
+	<Size x="24" y="32"/>
+	<Anchors>
+		<Anchor point="TOPRIGHT">
+			<Offset x="1" y="-1"/>
+		</Anchor>
+	</Anchors>
+	<NormalTexture name="$parentNormalTexture" file="Interface\FriendsFrame\TravelPass-Invite">
+		<Size x="24" y="32"/>
+		<TexCoords left="0.01562500" right="0.39062500" top="0.27343750" bottom="0.52343750"/>
+	</NormalTexture>
+	<PushedTexture name="$parentPushedTexture" file="Interface\FriendsFrame\TravelPass-Invite">
+		<Size x="24" y="32"/>
+		<TexCoords left="0.42187500" right="0.79687500" top="0.27343750" bottom="0.52343750"/>
+	</PushedTexture>
+	<DisabledTexture name="$parentDisabledTexture" file="Interface\FriendsFrame\TravelPass-Invite">
+		<Size x="24" y="32"/>
+		<TexCoords left="0.01562500" right="0.39062500" top="0.00781250" bottom="0.25781250"/>
+	</DisabledTexture>
+	<HighlightTexture name="$parentHighlightTexture" file="Interface\FriendsFrame\TravelPass-Invite" alphaMode="ADD">
+		<Size x="24" y="32"/>
+		<TexCoords left="0.42187500" right="0.79687500" top="0.00781250" bottom="0.25781250"/>
+	</HighlightTexture>
+	<Scripts>
+		<OnEnter function="TravelPassButton_OnEnter"/>
+		<OnLeave>
+			GameTooltip:Hide();
+		</OnLeave>
+		<OnClick>
+			FriendsFrame_BattlenetInvite(self:GetParent());
+		</OnClick>
+	</Scripts>
+</Button>
+		--]]
 
 		list.buttons[i] = row
 	end
 
 	local function UpdateRows(self)
 		local offset = FauxScrollFrame_GetOffset(self)
-
-		-- local avgItemLvl = GetAverageItemLevel()
-		-- local resilienceRating = GetCombatRating(COMBAT_RATING_RESILIENCE_PLAYER_DAMAGE_TAKEN)
-		-- local playerLevel = UnitLevel("player")
 
 		for i = 1, #self.buttons do
 			local row = self.buttons[i]
@@ -468,11 +523,12 @@ example: flex & r:en & l:athene & g:> 9 & w:< 10]]
 				row.comment:SetText(data.comment)
 
 				row.group:SetText(data.size)
-				if data.waiting and data.waiting > 0 then
+				--[[ if data.waiting and data.waiting > 0 then
 					row.waiting:SetText('|TInterface\\FriendsFrame\\StatusIcon-Away:0|t' .. data.waiting)
 				else
 					row.waiting:SetText('')
-				end
+				end --]]
+				row.waiting:SetText((data.waiting and data.waiting > 0) and data.waiting or '')
 
 				local status = ns.db.queued[ data.leader ]
 				if status == ns.const.status.PENDING then

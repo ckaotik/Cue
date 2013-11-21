@@ -33,6 +33,7 @@ function(flags, mask, set)
 	end
 	return flags
 end
+ns.oq.bset = bset
 
 local base64 = -- oq and oq.base64 or
 function(a, b, c)
@@ -164,162 +165,47 @@ local function EncodeNumber64(number, numDigits)
 	end
 	return result
 end
+ns.oq.EncodeNumber64 = EncodeNumber64
 
 -- --------------------------------------------------------
 --  ~
 -- --------------------------------------------------------
-local password = "abc123"
+local GenerateToken = oq and oq.token_gen or
+function(prefix)
+	-- get normalized UTC time with random modifier
+	-- TODO: FIXME: only works on MacOS
+	local token = EncodeNumber64(date('!%s') * 10000 + math.random(0, 10000), 5)
+	return (prefix or '') .. token
+end
+ns.oq.GenerateToken = GenerateToken
 
+-- TODO: this is stupid, anyone can grab password from messages and sign up themselves :( need at least 1-way-encryption + char dependent salt
+function ns.oq.EncodePassword(password)
+	if not password or password == '' then
+		password = '.'
+	end
+	local s = password:sub(0, 10):gsub(',', ';'):reverse()
+	return Encode64(s)
+end
+
+local salt = "abc123"
 function ns.oq.EncodeLeaderData(name, realm, battleTag)
-	local realmID = ns.GetRealmInfoByName(realm)
-	local s = strjoin(",", name, realmID, battleTag)
+	local s = strjoin(",", name, realm, battleTag)
 	      s = s:gsub(',', ';'):reverse()
 
 	-- encrypt
-	-- s = oq.encrypt(password, s)
+	-- s = oq.encrypt(salt, s)
 
-	return encode64(s)
+	return Encode64(s)
 end
 
 function ns.oq.DecodeLeaderData(data)
 	local s = Decode256(data)
 	      s = s:reverse():gsub(";", ",")
 
-	-- decrypt, apparently buggy
-	-- s = oq.decrypt(password, s)
+	-- decrypt
+	-- s = oq.decrypt(salt, s)
 
 	local name, realm, battleTag = string.split(',', s)
 	return name, realm, battleTag
-end
-
-local GenerateToken = oq and oq.token_gen or
-function()
-	-- get normalized UTC time with random modifier
-	-- TODO: FIXME: only works on MacOS
-	return EncodeNumber64(date('!%s') * 10000 + math.random(0, 10000), 5)
-end
-ns.oq.GenerateToken = GenerateToken
-
-local RANGED, MELEE, CASTER, TANK = 1, 2, 3, 4
-local statGetters = {
-	[TANK]   = { GetDodgeChance, GetParryChance, GetBlockChance, GetMasteryEffect },
-	[CASTER] = { GetSpellBonusHealing, function() return GetCombatRatingBonus(_G.CR_HIT_SPELL) end, GetMasteryEffect, UnitSpellHaste },
-	[RANGED] = { UnitRangedAttackPower, function() GetCombatRatingBonus(_G.CR_HIT_RANGED) end, GetRangedCritChance, GetMasteryEffect, GetRangedHaste },
-	[MELEE]  = { UnitAttackPower, function() GetCombatRatingBonus(_G.CR_HIT_MELEE) end, GetCritChance, GetMasteryEffect, GetMeleeHaste }
-}
-local function EncodeStats()
-	-- static info
-	local OQversion = '0Z'
-	local _, race = UnitRace('player')
-	local raceID = 0
-	for i, raceName in ipairs(ns.const.playerRaces) do
-		if raceName == race then
-			raceID = i
-			break
-		end
-	end
-	local _, _, classID = UnitClass('player')
-	local faction = UnitFactionGroup('player')
-	      faction = faction == 'Horde' and 0 or 1
-	local gender = UnitSex('player')
-	      gender = gender == 2 and 0 or 1
-
-	local demographics = bit.lshift(raceID, 2) + bit.lshift(gender, 1) + faction
-
-	-- dynamic info
-	local flags, xFlags, charm, s1, s2 = 0, 0, 0, 'A', 'A'
-	local level     = UnitLevel('player')
-	local maxHealth = UnitHealthMax('player')
-	      maxHealth = math.floor(maxHealth / 1000)
-	local _, itemLevel = GetAverageItemLevel()
-
-	local specID   = GetSpecialization()
-	local specRole = specID and select(6, GetSpecializationInfo(specID))
-	local OQRoleID = (specRole == 'DPS' and 1) or (specRole == 'HEALER' and 2) or (specRole == 'TANK' and 4) or 3
-	local OQSpecID, OQStatType  = ns.const.specInfo[specID].id, ns.const.specInfo[specID].stats
-
-	-- if (my_group > 0) then m = oq.raid.group[my_group].member[my_slot] end
-	local stats = '' -- oq.encode_slot(my_group, my_slot)
-		.. ns.const.type['TYPE_NONE'] -- TODO: (oq.raid.type or OQ.TYPE_NONE)
-		.. ns.oq.EncodeNumber64(level, 2)
-		.. ns.oq.EncodeNumber64(demographics, 1)
-		.. ns.const.playerClasses[ classID ]
-		.. ns.oq.EncodeNumber64(flags, 1)
-		.. ns.oq.EncodeNumber64(xFlags, 1)
-		.. ns.oq.EncodeNumber64(charm, 1)
-		.. ns.oq.EncodeNumber64(maxHealth, 2)
-		.. ns.oq.EncodeNumber64(OQRoleID, 1)
-		.. ns.oq.EncodeNumber64(OQSpecID, 1)
-		.. ns.oq.EncodeNumber64(itemLevel, 2)
-		.. ns.oq.EncodeNumber64(OQversion, 1)
-
-	if ns.IsPvE(premadeType) then
-		local bonus
-		for _, statGetter in ipairs(statGetters[OQStatType]) do
-			bonus = statGetter('player')
-			stats = stats .. ns.oq.EncodeNumber64(bonus*100, 3)
-		end
-
-		-- raid progression data
-		if premadeType == ns.const.premadeType.TYPE_CHALLENGE then
-			for _, statistic in ipairs({ 7400, 7401, 7402 }) do
-				stats = stats .. ns.oq.EncodeNumber64((GetStatistic(statistic)), 2)
-			end
-		end
-
-		--[[if (oq.raid.type == OQ.TYPE_CHALLENGE) then
-			local str = "" ;
-			str = str .."".. oq.encode_mime64_2digit( oq.get_medal_count(7400) ) ;
-			str = str .."".. oq.encode_mime64_2digit( oq.get_medal_count(7401) ) ;
-			str = str .."".. oq.encode_mime64_2digit( oq.get_medal_count(7402) ) ;
-
-			-- AA BB CC bbbWWdddmmm
-			-- bosses and wipes
-			local nbosses, nwipes = oq.get_nboss_kills() ;
-				local nbosses = (OQ_data.leader["pve.5man"].nBosses or 0) ;
-				nbosses = nbosses + OQ_data.leader["pve.raid"].nBosses ;
-				nbosses = nbosses + OQ_data.leader["pve.challenge"].nBosses ;
-
-				local nwipes = (OQ_data.leader["pve.5man"].nWipes or 0) ;
-				nwipes = nwipes + (OQ_data.leader["pve.raid"].nWipes or 0) ;
-				nwipes = nwipes + (OQ_data.leader["pve.challenge"].nWipes or 0) ;
-
-			-- return str .."".. oq.encode_mime64_3digit( nbosses            ) ..""..
-			                    oq.encode_mime64_2digit( nwipes             ) ..""..
-			                    oq.encode_mime64_3digit( OQ_data.leader_dkp ) ..""..
-			                    oq.encode_mime64_3digit( OQ_data._dkp       ) ;
-		else
-		  s = s .."".. oq.get_raid_progression() ;
-		end
-		--]]
-	else
-		--[[
-		-- pvp stats
-	    local bg_stats = OQ_toon.stats["rbg"] ;
-	    if (oq.raid.type == OQ.TYPE_BG) then
-	      bg_stats = OQ_toon.stats["bg"] ;
-	    end
-	    s = s .."".. oq.encode_mime64_3digit( oq.get_resil() ) ;
-	    s = s .."".. oq.encode_mime64_3digit( oq.get_pvppower() ) ;
-	    s = s .."".. oq.encode_mime64_3digit( bg_stats.nWins ) ;
-	    s = s .."".. oq.encode_mime64_3digit( bg_stats.nLosses ) ;
-	    s = s .."".. oq.encode_mime64_3digit( oq.total_tears() ) ; -- the only tears that count are those of your enemy; rbgs could be same faction
-	    s = s .."".. oq.encode_mime64_2digit( oq.get_best_mmr(oq.raid.type) ) ; -- rbg rating
-	    s = s .."".. oq.encode_mime64_2digit( oq.get_hks() ) ; -- total hks
-	    s = s .."".. s1 ;
-	    s = s .."".. s2 ;
-	    if (m ~= nil) then
-	      m.ranks = oq.get_pvp_experience() ;
-	      s = s .."".. m.ranks ; -- ranks & titles
-	    else
-	      s = s .."".. oq.get_pvp_experience() ;
-	    end
-		--]]
-	end
-
-	-- karma, tacked on the back to avoid protocol change and forced update
-	stats = stats .. ns.oq.EncodeNumber64(50, 1) -- TODO: karma
-	-- if my_group > 0 then oq.decode_stats2( player_name, player_realm, s, true ) end
-
-	return stats
 end
