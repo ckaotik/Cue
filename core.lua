@@ -5,6 +5,50 @@ local addonName, ns, _ = ...
 -- GLOBALS: type, tostringall, assert, pairs, print
 local join, format = string.join, string.format
 
+-- ================================================
+--  Event Handling
+-- ================================================
+local frame, eventHooks = CreateFrame("Frame", addonName.."EventHandler"), {}
+local function eventHandler(frame, event, arg1, ...)
+	if event == 'ADDON_LOADED' and arg1 == addonName then
+		-- make sure we always init before any other module
+		ns.Initialize()
+		if not eventHooks[event] or ns.Count(eventHooks[event]) < 1 then
+			frame:UnregisterEvent(event)
+		end
+	end
+
+	if eventHooks[event] then
+		for id, listener in pairs(eventHooks[event]) do
+			listener(frame, event, arg1, ...)
+		end
+	end
+end
+frame:SetScript("OnEvent", eventHandler)
+frame:RegisterEvent("ADDON_LOADED")
+
+function ns.RegisterEvent(event, callback, id, silentFail)
+	assert(callback and event and id, format("Usage: RegisterEvent(event, callback, id[, silentFail])"))
+	if not eventHooks[event] then
+		eventHooks[event] = {}
+		frame:RegisterEvent(event)
+	end
+	assert(silentFail or not eventHooks[event][id], format("Event %s already registered by id %s.", event, id))
+
+	eventHooks[event][id] = callback
+end
+function ns.UnregisterEvent(event, id)
+	if not eventHooks[event] or not eventHooks[event][id] then return end
+	eventHooks[event][id] = nil
+	if ns.Count(eventHooks[event]) < 1 then
+		eventHooks[event] = nil
+		frame:UnregisterEvent(event)
+	end
+end
+
+-- ================================================
+--  Basic Setup
+-- ================================================
 function ns.Initialize()
 	local LDB = LibStub("LibDataBroker-1.1")
 	local ldb = LDB:GetDataObjectByName(addonName)
@@ -65,6 +109,7 @@ local enabled = nil
 function ns.Enable()
 	JoinTemporaryChannel('oqgeneral')
 	ns.EnableBnetBroadcast()
+	frame:Show()
 	enabled = true
 
 	ns.PruneData()
@@ -74,6 +119,7 @@ end
 function ns.Disable()
 	LeaveChannelByName('oqgeneral')
 	ns.DisableBnetBroadcast()
+	frame:Hide()
 	enabled = nil
 
 	AceTimer:CancelTimer(pruneData)
@@ -88,47 +134,6 @@ function ns.Toggle()
 end
 
 -- ================================================
---  Event Handling
--- ================================================
-local frame, eventHooks = CreateFrame("Frame", addonName.."EventHandler"), {}
-local function eventHandler(frame, event, arg1, ...)
-	if event == 'ADDON_LOADED' and arg1 == addonName then
-		-- make sure we always init before any other module
-		ns.Initialize()
-		if not eventHooks[event] or ns.Count(eventHooks[event]) < 1 then
-			frame:UnregisterEvent(event)
-		end
-	end
-
-	if eventHooks[event] then
-		for id, listener in pairs(eventHooks[event]) do
-			listener(frame, event, arg1, ...)
-		end
-	end
-end
-frame:SetScript("OnEvent", eventHandler)
-frame:RegisterEvent("ADDON_LOADED")
-
-function ns.RegisterEvent(event, callback, id, silentFail)
-	assert(callback and event and id, format("Usage: RegisterEvent(event, callback, id[, silentFail])"))
-	if not eventHooks[event] then
-		eventHooks[event] = {}
-		frame:RegisterEvent(event)
-	end
-	assert(silentFail or not eventHooks[event][id], format("Event %s already registered by id %s.", event, id))
-
-	eventHooks[event][id] = callback
-end
-function ns.UnregisterEvent(event, id)
-	if not eventHooks[event] or not eventHooks[event][id] then return end
-	eventHooks[event][id] = nil
-	if ns.Count(eventHooks[event]) < 1 then
-		eventHooks[event] = nil
-		frame:UnregisterEvent(event)
-	end
-end
-
--- ================================================
 --  Little Helpers
 -- ================================================
 function ns.Print(text, ...)
@@ -137,7 +142,7 @@ function ns.Print(text, ...)
 	elseif ... then
 		text = join(", ", tostringall(text, ...))
 	end
-	print("|cffE01B5DTwinkle|r "..text)
+	print("|cffE01B5D"..addonName.."|r "..text)
 end
 
 function ns.Debug(...)
