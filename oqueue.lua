@@ -171,11 +171,16 @@ ns.oq.EncodeNumber64 = EncodeNumber64
 --  ~
 -- --------------------------------------------------------
 local GenerateToken = oq and oq.token_gen or
-function(prefix)
+function(prefix, saveKey)
 	-- get normalized UTC time with random modifier
 	-- TODO: FIXME: only works on MacOS
 	local token = EncodeNumber64(date('!%s') * 10000 + math.random(0, 10000), 5)
-	return (prefix or '') .. token
+	      token = (prefix or '') .. token
+
+	if saveKey then
+		ns.db.tokens[saveKey] = token
+	end
+	return token
 end
 ns.oq.GenerateToken = GenerateToken
 
