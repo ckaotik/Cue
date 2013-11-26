@@ -60,7 +60,7 @@ function ns.SendMessage(target, targetRealm, messageType, message, token, ttl)
 	-- if string.find(target, '#') then
 	-- if not message or not target or not to_realm or to_name == '-' or (to_name == ns.playerName and to_realm == ns.playerRealm) then
 
-	local fullMessage = strjoin(',', 'OQ', ns.OQversion, token or ns.oq.GenerateToken('W'), messageType, ttl or ns.OQmaxPosts, message)
+	local fullMessage = strjoin(',', 'OQ', ns.OQversion, token or ns.oq.GenerateToken('W'), ttl or ns.OQmaxPosts, messageType, message)
 	if not targetRealm or targetRealm == ns.playerRealm then
 		SendAddonMessage("OQ", fullMessage, "WHISPER", target)
 	else
@@ -93,7 +93,7 @@ function ns.JoinQueue(leader, password)
 	local password    = ns.oq.EncodePassword(password)
 	local groupSize   = 1 -- GetNumGroupMembers()
 
-	local message     = strjoin(',', ns.db.premadeCache[leader].token, premadeType, groupSize, ns.oq.GenerateToken('Q'), playerData, playerStats, password)
+	local message     = strjoin(',', ns.db.premadeCache[leader].token, premadeType, groupSize, ns.oq.GenerateToken('Q', leader), playerData, playerStats, password)
 
 	-- send message
 	ns.SendMessage(target, targetRealm, 'ri', message, 'W1', 0)
@@ -105,25 +105,17 @@ function ns.LeaveQueue(leader, announce)
 	ns.db.queued[leader] = nil
 	if announce then
 		-- send message to get us out of queue
-	end
-end
-
--- join a premade group
-function ns.JoinBnetGroup(...)
-	--[[-- TODO: do this when receiving friend request leading to invite
-	if IsInGroup(_G.LE_PARTY_CATEGORY_HOME) then
-		if ns.db.leaveExistingGroup then
-			LeaveParty()
+		local target, targetRealm, battleTag = ns.oq.DecodeLeaderData(leader)
+		if targetRealm == ns.playerRealm then
+			if target == ns.playerName then return end
+			targetRealm = nil
 		else
-			ns.Print('You are already in a group.')
-			return
+			target = battleTag
 		end
+
+		local message = strjoin(',', ns.db.premadeCache[leader].token, ns.db.tokens[leader])
+		ns.SendMessage(target, targetRealm, 'leave_waitlist', message, 'W1', 0)
 	end
-	--]]
-
-	-- ns.LeaveQueue(leader)
-
-	-- if removeFriendOnJoin then ... end
 end
 
 -- big credits to nefftd@wowinterface
@@ -150,26 +142,15 @@ function ns.PreventBnetSpam()
 			-- end
 		end
 	end)
-
-	-- TODO: remove :)
-	hooksecurefunc('BNSendFriendInvite', function(battleTag, message)
-		local version, token, ttl, messageType, message = ns.GetOQMessageInfo(message)
-		if version then
-			print('BNSendFriendInvite', token, ttl, messageType, "\n", message)
-
-			-- token: 		W1
-			-- messageType: ri
-			-- message:		G8hlBU,R,1,QAPbmw,NjI5MiNsZWFqOzQzMzt5bmFoVAAA,ARBaiIAAAI5BaIioAAAAfTARzBk9AXlAAAAAAAAAAAAAAAAAAAAAAZ,LgAA
-
-			-- token: 		W1
-			-- messageType: leave_waitlist
-			-- message:		GBALcc,QCuvV9
-		end
-		--[[
-			oq.realid_msg( raid.leader, raid.leader_realm, raid.leader_rid,
-				OQ_MSGHEADER .."".. OQ_VER ..","..
-				"W1,".."0,".."ri,"..
-				raid_token ..","..tostring(raid.type or 0) ..",".."1,"..req_token ..","..enc_data ..","..stats ..","..oq.encode_pword( pword ) )
-		--]]
-	end)
 end
+
+
+
+
+-- TODO: remove :)
+hooksecurefunc('BNSendFriendInvite', function(battleTag, message)
+	local version, token, ttl, messageType, message = ns.GetOQMessageInfo(message)
+	if version then
+		print('BNSendFriendInvite', battleTag, token, ttl, messageType, "\n", message)
+	end
+end)
