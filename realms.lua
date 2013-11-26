@@ -10,6 +10,7 @@ local region = string.lower( GetCVar('portal') or '' )
 -- required info: realm name, id, battle group, language
 local realmInfo = {}
 function ns.GetRealmInfoByName(realmName)
+	if not realmName or realmName == '' then return end
 	realmName = gsub(realmName, "%s-%b()", "") -- remove suffixes such as (EU)
 	realmName = gsub(realmName, " ", "")
 
@@ -341,7 +342,7 @@ elseif region == 'eu' then
 		["Hyjal"] 				= { id =  46, group = "", locale = "frFR", rp = nil,  pvp = nil },
 		["KhazModan"] 			= { id =  11, group = "", locale = "frFR", rp = nil,  pvp = nil },
 		["Krasus"] 				= { id = 308, group = "", locale = "frFR", rp = nil,  pvp = nil },
-		["MarécagedeZangar"] 	= { id = 303, group = "", locale = "frFR", rp = nil,  pvp = nil },
+		["MarécagedeZangar"] 	= { id = 113, group = "", locale = "frFR", rp = nil,  pvp = nil },
 		["Medivh"] 				= { id = 125, group = "", locale = "frFR", rp = nil,  pvp = nil },
 		["Suramar"] 			= { id = 240, group = "", locale = "frFR", rp = nil,  pvp = nil },
 		["Uldaman"] 			= { id = 224, group = "", locale = "frFR", rp = nil,  pvp = nil },
