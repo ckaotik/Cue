@@ -92,12 +92,18 @@ function ns.InitUI()
 		local aData = ns.db.premadeCache[a]
 		local bData = ns.db.premadeCache[b]
 
-		for _, attribute in ipairs( sortables[currentSortBy] ) do
-			if aData[attribute] ~= bData[attribute] then
-				if currentSortReverse then
-					return aData[attribute] > bData[attribute]
-				else
-					return aData[attribute] < bData[attribute]
+		local aStatus = ns.db.queued[a]
+		local bStatus = ns.db.queued[b]
+		if aStatus and bStatus and aStatus ~= bStatus then
+			return (aStatus or math.huge) < (bStatus or math.huge)
+		else
+			for _, attribute in ipairs( sortables[currentSortBy] ) do
+				if aData[attribute] ~= bData[attribute] then
+					if currentSortReverse then
+						return aData[attribute] > bData[attribute]
+					else
+						return aData[attribute] < bData[attribute]
+					end
 				end
 			end
 		end
@@ -168,6 +174,7 @@ function ns.InitUI()
 	frame:SetAttribute("UIPanelLayout-pushable", 5)
 
 	SetPortraitToTexture(frame.portrait, "Interface\\Icons\\Achievement_BG_KillXEnemies_GeneralsRoom")
+	-- ButtonFrameTemplate_ShowButtonBar(CueFrame)
 	frame.TitleText:SetText(addonName)
 
 	-- header inset, containing filters
@@ -236,12 +243,12 @@ function ns.InitUI()
 			filters.search = (text ~= "" and text ~= SEARCH) and string.lower(text) or nil
 			ns.UpdateUI(true)
 		end)
-		searchbox.tiptext = [[Use & (and) and | (or) to combine queries.
-  r - realm
-  l - leader
-  g - group size
-  w - wait list
-example: flex & r:en & l:athene & g:> 9 & w:< 10]]
+		searchbox.tiptext = function(self, tooltip)
+			tooltip:AddLine(SEARCH)
+			tooltip:AddLine([[Combine queries by using |cffFFFFFF&|r (and), |cffFFFFFF|||r (or).
+Search details using |cffFFFFFFr|realm, |cffFFFFFFl|reader, |cffFFFFFFg|rroup size, |cffFFFFFFw|rait list
+|cffFFFFFFexample:|r flex & r:en & l:athene & g:> 9 & w:< 10]], nil, nil, nil, true)
+		end
 		searchbox:SetScript("OnEnter", ns.ShowTooltip)
 		searchbox:SetScript("OnLeave", ns.HideTooltip)
 	header.search = searchbox
@@ -296,7 +303,7 @@ example: flex & r:en & l:athene & g:> 9 & w:< 10]]
 	list.buttons = {}
 	list.data = {}
 
-	local function LeaveQueue(button, leader) ns.LeaveQueue(leader) end
+	local function LeaveQueue(button, leader) ns.LeaveQueue(leader, not IsShiftKeyDown()) end
 	local function AddBNFriend(button, battleTag) BNSendFriendInvite(battleTag) end
 	local function Whisper(button, battleTag) ChatFrame_SendSmartTell(battleTag) end
 	local function BanLeader(button, battleTag) table.insert(ns.db.blacklist, battleTag) end
