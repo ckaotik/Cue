@@ -83,10 +83,11 @@ function ns.Initialize()
 	if not CueDB then CueDB = {} end
 	ns.db = CueDB
 
-	if not ns.db.queued then ns.db.queued = {} end             -- tracks groups we've requested to join
-	if not ns.db.blacklist then ns.db.blacklist = {} end       -- tracks leaders' battletags we don't want to group with
-	if not ns.db.bntracking then ns.db.bntracking = {} end     -- tracks requests sent as BN friend invite
-	if not ns.db.premadeCache then ns.db.premadeCache = {} end -- tracks groups that are currently available
+	if not ns.db.queued then ns.db.queued = {} end 				-- tracks groups we've requested to join
+	if not ns.db.blacklist then ns.db.blacklist = {} end 		-- tracks leaders' battletags we don't want to group with
+	if not ns.db.bntracking then ns.db.bntracking = {} end 		-- tracks requests sent as BN friend invite
+	if not ns.db.premadeCache then ns.db.premadeCache = {} end 	-- tracks groups that are currently available
+	if not ns.db.tokens then ns.db.tokens = {} end 				-- tracks generated, sent request tokens
 
 	SLASH_CUE1 = '/cue'
 	SLASH_CUE2 = '/queue'
@@ -137,7 +138,7 @@ end
 --  Little Helpers
 -- ================================================
 function ns.Print(text, ...)
-	if ... and text:find("%%[ds123456789]") then
+	if ... and text:find("%%[ds123456789]+") then
 		text = format(text, ...)
 	elseif ... then
 		text = join(", ", tostringall(text, ...))
