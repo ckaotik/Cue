@@ -110,7 +110,7 @@ local enabled = nil
 function ns.Enable()
 	JoinTemporaryChannel('oqgeneral')
 	ns.EnableBnetBroadcast()
-	frame:Show()
+	frame:Show() -- start listening for events
 	enabled = true
 
 	ns.PruneData()
@@ -128,8 +128,10 @@ end
 
 function ns.Toggle()
 	if enabled then
+		ns.Print('Cue is disabled')
 		ns.Disable()
 	else
+		ns.Print('Cue is enabled')
 		ns.Enable()
 	end
 end

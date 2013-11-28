@@ -49,13 +49,24 @@ function ns.GetLeaderByToken(token)
 	end
 end
 
--- name: Mychar-Myrealm
-function ns.GetLeaderByName(name)
+-- handles "Mychar-Myrealm", "Mychar-123" and "Mychar" ["Myrealm"]
+function ns.GetLeaderByName(name, realm)
 	if not name or name == '' then return end
+	if not realm and name:find('-') then
+		name, realm = strsplit("-", name)
+		realm = realm and tonumber(realm) or realm
+	end
+
+	if not realm then
+		realm = ns.playerRealm
+	elseif type(realm) ~= "number" then
+		realm = ns.GetRealmInfoByName(realm)
+	end
+
 	local leaderName, leaderRealm
 	for leader, data in pairs(ns.db.premadeCache) do
 		leaderName, leaderRealm = ns.oq.DecodeLeaderData(leader)
-		if leaderName..'-'..leaderRealm == name then
+		if leaderName == name and leaderRealm == realm then
 			return leader
 		end
 	end
@@ -308,9 +319,7 @@ ns.RegisterEvent("BN_FRIEND_INVITE_ADDED", HandleFriendInvites, "newfriendreq")
 ns.RegisterEvent("GROUP_JOINED", function(self, event, groupType)
 	if groupType ~= LE_PARTY_CATEGORY_HOME then return end
 	local leadName, leaderRealm = UnitName('raid1')
-	local realmID = ns.GetRealmInfoByName(leadRealm) or ns.playerRealm
-
-	local leader = ns.GetLeaderByName(leadName..'-'..realmID)
+	local leader = ns.GetLeaderByName(leadName, leaderRealm)
 	if leader then
 		ns.db.tokens[leader] = nil
 		if ns.db.queued[leader] then
@@ -321,3 +330,5 @@ ns.RegisterEvent("GROUP_JOINED", function(self, event, groupType)
 	-- ns.LeaveQueue(otherLeader)
 	-- if removeFriendOnJoin then ... end
 end, "invite")
+
+-- TODO: remove .status.GROUPED entries when leaving group
