@@ -319,6 +319,9 @@ ns.RegisterEvent("BN_FRIEND_INVITE_ADDED", HandleFriendInvites, "newfriendreq")
 ns.RegisterEvent("GROUP_JOINED", function(self, event, groupType)
 	if groupType ~= LE_PARTY_CATEGORY_HOME then return end
 	local leadName, leaderRealm = UnitName('raid1')
+	if not leadName then
+		leadName, leaderRealm = UnitName('party1')
+	end
 	local leader = ns.GetLeaderByName(leadName, leaderRealm)
 	if leader then
 		ns.db.tokens[leader] = nil

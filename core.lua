@@ -128,10 +128,10 @@ end
 
 function ns.Toggle()
 	if enabled then
-		ns.Print('Cue is disabled')
+		ns.Print('is disabled')
 		ns.Disable()
 	else
-		ns.Print('Cue is enabled')
+		ns.Print('is enabled')
 		ns.Enable()
 	end
 end

@@ -457,42 +457,6 @@ Search details using |cffFFFFFFr|realm, |cffFFFFFFl|reader, |cffFFFFFFg|rroup si
 		actionButton:SetScript("OnLeave", ns.HideTooltip)
 		actionButton.tiptext = _G.JOIN
 
-		--[[
-<Button name="$parentTravelPassButton" hidden="true" motionScriptsWhileDisabled="true" parentKey="travelPassButton">
-	<Size x="24" y="32"/>
-	<Anchors>
-		<Anchor point="TOPRIGHT">
-			<Offset x="1" y="-1"/>
-		</Anchor>
-	</Anchors>
-	<NormalTexture name="$parentNormalTexture" file="Interface\FriendsFrame\TravelPass-Invite">
-		<Size x="24" y="32"/>
-		<TexCoords left="0.01562500" right="0.39062500" top="0.27343750" bottom="0.52343750"/>
-	</NormalTexture>
-	<PushedTexture name="$parentPushedTexture" file="Interface\FriendsFrame\TravelPass-Invite">
-		<Size x="24" y="32"/>
-		<TexCoords left="0.42187500" right="0.79687500" top="0.27343750" bottom="0.52343750"/>
-	</PushedTexture>
-	<DisabledTexture name="$parentDisabledTexture" file="Interface\FriendsFrame\TravelPass-Invite">
-		<Size x="24" y="32"/>
-		<TexCoords left="0.01562500" right="0.39062500" top="0.00781250" bottom="0.25781250"/>
-	</DisabledTexture>
-	<HighlightTexture name="$parentHighlightTexture" file="Interface\FriendsFrame\TravelPass-Invite" alphaMode="ADD">
-		<Size x="24" y="32"/>
-		<TexCoords left="0.42187500" right="0.79687500" top="0.00781250" bottom="0.25781250"/>
-	</HighlightTexture>
-	<Scripts>
-		<OnEnter function="TravelPassButton_OnEnter"/>
-		<OnLeave>
-			GameTooltip:Hide();
-		</OnLeave>
-		<OnClick>
-			FriendsFrame_BattlenetInvite(self:GetParent());
-		</OnClick>
-	</Scripts>
-</Button>
-		--]]
-
 		list.buttons[i] = row
 	end
 
@@ -582,20 +546,4 @@ Search details using |cffFFFFFFr|realm, |cffFFFFFFl|reader, |cffFFFFFFg|rroup si
 	-- setup initial state
 	FauxScrollFrame_OnVerticalScroll(list, 0, rowHeight, UpdateRows)
 	ns.UpdateUI()
-
-	--[[
-	local tabIndex = PVEFrame.numTabs + 1
-	local tab = CreateFrame("Button", "$parentTab"..tabIndex, PVEFrame, "CharacterFrameTabButtonTemplate", tabIndex)
-	      tab:SetPoint("LEFT", "$parentTab"..(tabIndex-1), "RIGHT", -16, 0)
-	      tab:SetText(addonName)
-	      tab:SetScript("OnClick", function(self, btn)
-	      	PanelTemplates_SetTab(self, tabIndex)
-	      	self.activeTabIndex = self:GetID()
-	      	frame:Show()
-	      end)
-	PVEFrame["tab"..tabIndex] = tab
-	PanelTemplates_SetNumTabs(PVEFrame, tabIndex)
-	PanelTemplates_TabResize(tab) -- , padding, absoluteSize, minWidth, maxWidth, absoluteTextSize)
-	-- PanelTemplates_SelectTab(tab)
-	--]]
 end
