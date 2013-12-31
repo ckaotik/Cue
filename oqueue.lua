@@ -174,7 +174,7 @@ local GenerateToken = oq and oq.token_gen or
 function(prefix, saveKey)
 	-- get normalized UTC time with random modifier
 	-- TODO: FIXME: only works on MacOS
-	local token = EncodeNumber64(date('!%s') * 10000 + math.random(0, 10000), 5)
+	local token = EncodeNumber64(date('!%s') * 10000 + fastrandom(0, 10000), 5)
 	      token = (prefix or '') .. token
 
 	if saveKey then

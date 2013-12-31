@@ -1,5 +1,5 @@
 local addonName, ns, _ = ...
-ns.OQversion = '0Z'
+ns.OQversion = '1A'
 ns.OQmaxPosts = 5
 ns.const = {}
 
