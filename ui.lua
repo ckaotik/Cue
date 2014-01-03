@@ -530,7 +530,7 @@ Search details using |cffFFFFFFr|realm, |cffFFFFFFl|reader, |cffFFFFFFg|rroup si
 	end)
 
 	local lastUpdate
-	function ns.UpdateUI(forced)
+	ns.UpdateUI = function(forced)
 		if not _G['CueFrame']:IsVisible() or _G['CueFrame'].pauseUpdates then return end
 		local now = time()
 		if not forced and lastUpdate and now - lastUpdate < UI_UPDATE_DELAY then return end

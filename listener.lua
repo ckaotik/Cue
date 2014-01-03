@@ -1,5 +1,5 @@
 local addonName, ns, _ = ...
-local DATA_TIMEOUT = 2*60
+local DATA_TIMEOUT = 60*3
 
 -- GLOBALS: IsInRaid, IsRatedBattleground, InCombatLockdown, PlaySound, BNGetNumFriendInvites, BNGetFriendInviteInfo, BNAcceptFriendInvite, BNDeclineFriendInvite
 -- GLOBALS: time, date, pairs, wipe, collectgarbage, select, strsplit
@@ -95,6 +95,7 @@ local function OnPremade(version, token, ttl, messageType, messageText)
 
 	local raidToken, premadeTitle, premadeInfo, leaderInfo, comment, premadeType, groupData, leaderExperience = strsplit(",", message)
 	local faction, hasPassword, realmSpecific, is_source, level, iLvl, resilience, numMembers, numWaiting, status, msgTime, minMMR = ns.oq.DecodePremadeInfo(premadeInfo)
+
 	-- a message from the future!
 	if msgTime > time() + 4*24*60 then return end
 	--[[ TYPE_NONE, TYPE_ARENA, TYPE_BG, TYPE_DUNGEON, TYPE_QUESTS, TYPE_RBG, TYPE_RAID, TYPE_SCENARIO, TYPE_CHALLENGE, --]]
