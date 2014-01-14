@@ -212,5 +212,5 @@ function ns.oq.DecodeLeaderData(data)
 	-- s = oq.decrypt(salt, s)
 
 	local name, realm, battleTag = string.split(',', s)
-	return name, realm, battleTag
+	return name, tonumber(realm or '') or realm, battleTag
 end

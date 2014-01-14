@@ -294,7 +294,7 @@ Search details using |cffFFFFFFr|realm, |cffFFFFFFl|reader, |cffFFFFFFg|rroup si
 	listFrame:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -2 - 24)
 	listFrame:SetPoint("BOTTOMRIGHT", "$parent", "BOTTOMRIGHT", -4, 4)
 
-	local rowHeight = 30
+	local rowHeight = 29
 	local list = CreateFrame("ScrollFrame", "$parentList", listFrame, "FauxScrollFrameTemplate")
 	list:SetPoint("TOPLEFT", "$parent", "TOPLEFT", 4, -4)
 	list:SetPoint("BOTTOMRIGHT", "$parent", "BOTTOMRIGHT", -4, -4)
@@ -364,7 +364,7 @@ Search details using |cffFFFFFFr|realm, |cffFFFFFFl|reader, |cffFFFFFFg|rroup si
 		end
 	end
 
-	for i = 1, 10 do
+	for i = 1, 11 do
 		local row = CreateFrame("Button", nil, listFrame, nil, i)
 		row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight") -- "Interface\\Buttons\\UI-Common-MouseHilight")
 		row:SetHeight(rowHeight)

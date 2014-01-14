@@ -144,13 +144,10 @@ function ns.PreventBnetSpam()
 	end)
 end
 
-
-
-
 -- TODO: remove :)
-hooksecurefunc('BNSendFriendInvite', function(battleTag, message)
+--[[ hooksecurefunc('BNSendFriendInvite', function(battleTag, message)
 	local version, token, ttl, messageType, message = ns.GetOQMessageInfo(message)
 	if version then
 		print('BNSendFriendInvite', battleTag, token, ttl, messageType, "\n", message)
 	end
-end)
+end) --]]

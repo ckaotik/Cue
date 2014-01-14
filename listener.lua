@@ -129,7 +129,7 @@ local function OnPremade(version, token, ttl, messageType, messageText)
 	premadeCache[leaderInfo].title      = SanitizeText(premadeTitle)
 	premadeCache[leaderInfo].comment    = SanitizeText(comment)
 	premadeCache[leaderInfo].leader     = leaderInfo
-	premadeCache[leaderInfo].size       = numMembers
+	premadeCache[leaderInfo].size       = numMembers > 0 and numMembers or 1
 	premadeCache[leaderInfo].waiting    = numWaiting
 	premadeCache[leaderInfo].updated    = msgTime
 
@@ -316,23 +316,27 @@ end
 ns.RegisterEvent("BN_FRIEND_INVITE_LIST_INITIALIZED", HandleFriendInvites, "availfriendreq")
 ns.RegisterEvent("BN_FRIEND_INVITE_ADDED", HandleFriendInvites, "newfriendreq")
 
--- PARTY_INVITE_REQUEST: sender, hasTankSlot, hasHealSlot, hasDpsSlot, unknown
-ns.RegisterEvent("GROUP_JOINED", function(self, event, groupType)
-	if groupType ~= LE_PARTY_CATEGORY_HOME then return end
-	local leadName, leaderRealm = UnitName('raid1')
-	if not leadName then
-		leadName, leaderRealm = UnitName('party1')
-	end
-	local leader = ns.GetLeaderByName(leadName, leaderRealm)
+local currentGroupLeader = nil
+ns.RegisterEvent("PARTY_INVITE_REQUEST", function(self, event, leaderName, ...)
+	local leader = ns.GetLeaderByName(leaderName)
 	if leader then
 		ns.db.tokens[leader] = nil
 		if ns.db.queued[leader] then
 			ns.db.queued[leader] = ns.const.status.GROUPED
+			currentGroupLeader = leader
+			ns.UpdateUI(true)
 		end
 	end
-
 	-- ns.LeaveQueue(otherLeader)
 	-- if removeFriendOnJoin then ... end
-end, "invite")
+end, "invite_group")
 
--- TODO: remove .status.GROUPED entries when leaving group
+ns.RegisterEvent("GROUP_ROSTER_UPDATE", function(self, event)
+	if currentGroupLeader and GetNumGroupMembers() <= 1 then
+		-- group left
+		ns.LeaveQueue(currentGroupLeader)
+		ns.db.queued[leader] = nil
+		currentGroupLeader = nil
+		ns.UpdateUI(true)
+	end
+end, 'leave_group')
