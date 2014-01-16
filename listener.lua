@@ -335,7 +335,6 @@ ns.RegisterEvent("GROUP_ROSTER_UPDATE", function(self, event)
 	if currentGroupLeader and GetNumGroupMembers() <= 1 then
 		-- group left
 		ns.LeaveQueue(currentGroupLeader)
-		ns.db.queued[leader] = nil
 		currentGroupLeader = nil
 		ns.UpdateUI(true)
 	end
