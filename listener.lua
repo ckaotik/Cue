@@ -326,8 +326,15 @@ ns.RegisterEvent("PARTY_INVITE_REQUEST", function(self, event, leaderName, ...)
 			currentGroupLeader = leader
 			ns.UpdateUI(true)
 		end
+
+		if not ns.db.stayQueuedOnInvite then
+			for otherLeader, status in pairs(ns.db.queued) do
+				if otherLeader ~= leader then
+					ns.LeaveQueue(otherLeader, true)
+				end
+			end
+		end
 	end
-	-- ns.LeaveQueue(otherLeader)
 	-- if removeFriendOnJoin then ... end
 end, "invite_group")
 

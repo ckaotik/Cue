@@ -5,6 +5,11 @@ local addonName, ns, _ = ...
 -- GLOBALS: type, tostringall, assert, pairs, print
 local join, format = string.join, string.format
 
+--[[
+possible settings: /run CueDB[mySetting] = myValue
+- stayQueuedOnInvite: if you're in several queues when an invite pops, setting this to <true> will prevent Cue from automatically leaving all other queues
+--]]
+
 -- ================================================
 --  Event Handling
 -- ================================================
