@@ -94,7 +94,7 @@ function ns.InitUI()
 
 		local aStatus = ns.db.queued[a]
 		local bStatus = ns.db.queued[b]
-		if aStatus and bStatus and aStatus ~= bStatus then
+		if (aStatus or bStatus) and aStatus ~= bStatus then
 			return (aStatus or math.huge) < (bStatus or math.huge)
 		else
 			for _, attribute in ipairs( sortables[currentSortBy] ) do
