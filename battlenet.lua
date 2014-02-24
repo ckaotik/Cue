@@ -4,31 +4,6 @@ local BNET_PREFIX = "(OQ)"
 
 -- GLOBALS: BNFeaturesEnabledAndConnected, BNConnected, BNGetInfo, BNGetNumFriends, BNGetFriendInfo, BNSetCustomMessage, BNSendFriendInvite, BNGetFriendInfoByID
 
--- edits the player's battle.net status to include OQ tag
-function ns.EnableBnetBroadcast()
-	if not BNFeaturesEnabledAndConnected() or not BNConnected() or not ns.db.useBattleNet then return end
-
-	local _, _, _, broadcastText = BNGetInfo()
-	if broadcastText == "" then
-		BNSetCustomMessage(BNET_PREFIX)
-	elseif not broadcastText:find(BNET_PREFIX) then
-		BNSetCustomMessage(BNET_PREFIX .. " " .. broadcastText:trim())
-	end
-end
-
--- removes OQ tag from player's battle.net status
-function ns.DisableBnetBroadcast()
-	if not BNConnected() or not ns.db.useBattleNet then return end
-
-	local _, _, _, broadcastText = BNGetInfo()
-	if broadcastText:find(BNET_PREFIX) then
-		local message = broadcastText:gsub(BNET_PREFIX, ""):trim()
-		BNSetCustomMessage(message)
-	end
-
-	-- if removeAddedFriends then ... end
-end
-
 function ns.GetBnetFriendInfo(searchBattleTag)
 	local presenceID, battleTag, client, isOnline
 	for i = 1, BNGetNumFriends() do
@@ -44,6 +19,7 @@ function ns.SendBnetMessage(battleTag, message, messageType)
 	local presenceID, isOnline, isWoW = ns.GetBnetFriendInfo(battleTag)
 	if presenceID then
 		if isOnline and isWoW then
+			-- BNSendGameData(presenceID, addonPrefix, message)
 			-- BNSendWhisper(presenceID, message)
 		end
 	else
@@ -117,37 +93,3 @@ function ns.LeaveQueue(leader, announce)
 		ns.SendMessage(target, targetRealm, 'leave_waitlist', message, 'W1', 0)
 	end
 end
-
--- big credits to nefftd@wowinterface
-function ns.PreventBnetSpam()
-	-- Pull in constants from BNet.lua
-	local BN_TOAST_TYPE_ONLINE = 1
-	local BN_TOAST_TYPE_OFFLINE = 2
-	local BN_TOAST_TYPE_BROADCAST = 3
-	local BN_TOAST_TYPE_PENDING_INVITES = 4
-	local BN_TOAST_TYPE_NEW_INVITE = 5
-	local BN_TOAST_TYPE_CONVERSATION = 6
-
-	hooksecurefunc('BNToastFrame_AddToast', function(toastType, toastData)
-		-- hide (OQ) message toasts
-		-- hide automated Friend Request Sent/Received toast
-		if toastType == BN_TOAST_TYPE_NEW_INVITE then
-			--
-		elseif toastType == BN_TOAST_TYPE_BROADCAST then
-			local presenceID, givenName, surname, toonName, toonID, client, isOnline, lastOnline, isAFK, isDND, messageText, noteText, isRIDFriend, broadcastTime, canSoR = BNGetFriendInfoByID(toastData)
-			-- local _, toonName, client = BNGetToonInfo(presenceID)
-
-			-- if messageText:match('BLOCK') then  -- check if the message contains 'BLOCK'
-				-- BNToastFrame_RemoveToast(toastType, toastData)  -- VOILA!
-			-- end
-		end
-	end)
-end
-
--- TODO: remove :)
---[[ hooksecurefunc('BNSendFriendInvite', function(battleTag, message)
-	local version, token, ttl, messageType, message = ns.GetOQMessageInfo(message)
-	if version then
-		print('BNSendFriendInvite', battleTag, token, ttl, messageType, "\n", message)
-	end
-end) --]]

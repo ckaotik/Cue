@@ -32,16 +32,15 @@ function ns.InitUI()
 
 		-- TODO: could probably be done by CustomSearch, too
 		local premadeType = data.type
-		if ns.Count( filters.types ) > 0 then
-			local pass = false
-			for filterType, _ in pairs(filters.types) do
-				if filterType == premadeType then
-					pass = true
-					break
-				end
+		local pass, isFiltered = false, false
+		for filterType, _ in pairs(filters.types) do
+			isFiltered = true
+			if filterType == premadeType then
+				pass = true
+				break
 			end
-			if not pass then return nil end
 		end
+		if isFiltered and not pass then return nil end
 
 		if filters.search then
 			if not ns.Find(data, filters.search) then

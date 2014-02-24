@@ -245,36 +245,38 @@ local messageHandler = {
 -- ================================================
 --  Listen for message & handle appropriately
 -- ================================================
-ns.RegisterEvent("CHAT_MSG_CHANNEL", function(self, event, ...)
-	-- if InCombatLockdown() or IsInRaid() or IsRatedBattleground() then return end
-	local channelName, _, _, senderGUID = select(9, ...)
-	if channelName:lower() ~= "oqgeneral" then return end
-
-	local version, token, ttl, messageType, message = ns.GetOQMessageInfo(...)
+local function HandleChatMessage(chatMessage, presenceID, senderName, blizzRealmID)
+	local version, token, ttl, messageType, message = ns.GetOQMessageInfo(chatMessage)
+	-- print('OQ message', chatMessage, presenceID, senderName, blizzRealmID)
 	if messageType and messageHandler[messageType] then
 		messageHandler[messageType](version, token, ttl, messageType, message)
+	end
+end
+
+-- local presenceID = BNet_GetPresenceID("name")
+ns.RegisterEvent("CHAT_MSG_CHANNEL", function(self, event, message, senderName, _, _, _, _, _, _, channelName)
+	channelName = channelName:lower()
+	if channelName == ns.OQchannel or channelName == 'oqgeneral' then
+		HandleChatMessage(message, nil, senderName)
 	end
 end, "oq_msg_channel")
 
-ns.RegisterEvent("CHAT_MSG_BN_WHISPER", function(self, event, ...)
-	-- if InCombatLockdown() or IsInRaid() or IsRatedBattleground() then return end
-	local chatMessage = ...
-	local presenceID  = select(13, ...)
+ns.RegisterEvent("CHAT_MSG_ADDON", function(self, event, prefix, chatMessage, _, senderName)
+	if prefix ~= "OQ" or sender == ns.playerName then return end
+	HandleChatMessage(chatMessage, nil, senderName)
+end, "oq_msg_addon")
 
-	local version, token, ttl, messageType, message = ns.GetOQMessageInfo(chatMessage)
-	if messageType and messageHandler[messageType] then
-		messageHandler[messageType](version, token, ttl, messageType, message)
-	end
+ns.RegisterEvent("BN_CHAT_MSG_ADDON", function(self, event, prefix, chatMessage, _, senderToonID)
+	local _, toonName, client, realmName, realmID, _, _, _, _, _, _, _, _, _, _, presenceID = BNGetToonInfo(senderToonID)
+	local senderName = toonName..'-'..realmName:gsub(' ', '')
+	print('BN_CHAT_MSG_ADDON', prefix, chatMessage, senderToonID, senderName, realmID)
+	HandleChatMessage(chatMessage, presenceID, senderName, realmID)
+end, "oq_msg_bnet_addon")
+
+ns.RegisterEvent("CHAT_MSG_BN_WHISPER", function(self, event, message, _, _, _, _, _, _, _, _, _, _, _, presenceID)
+	HandleChatMessage(message, presenceID)
 end, "oq_msg_bnet")
 
-ns.RegisterEvent("CHAT_MSG_ADDON", function(self, event, prefix, msg, channel, sender)
-	if prefix ~= "OQ" or sender == ns.playerName then return end
-
-	local version, token, ttl, messageType, message = ns.GetOQMessageInfo(msg)
-	if messageType and messageHandler[messageType] then
-		messageHandler[messageType](version, token, ttl, messageType, message)
-	end
-end, "oq_msg_addon")
 
 local notes = {}
 local function SetFriendNote()
@@ -287,9 +289,11 @@ local function SetFriendNote()
 	end
 	ns.UnregisterEvent("BN_FRIEND_LIST_SIZE_CHANGED", 'friendnote')
 end
-local function HandleFriendInvites(self, event)
+local function HandleFriendInvites(self, event, ...)
+	local prefix, msg, _, senderToonID = ...
+
 	for i = BNGetNumFriendInvites(), 1, -1 do
-		local presenceID, presenceName, isBattleTagPresence, msg, broadcastTime = BNGetFriendInviteInfo(i)
+		local presenceID, presenceName, isBattleTagPresence, msg, broadcastTime = BNGetFriendInviteInfoByAddon(i)
 
 		local version, token, ttl, messageType, message = ns.GetOQMessageInfo(msg)
 		if not version then
@@ -308,6 +312,7 @@ local function HandleFriendInvites(self, event)
 
 				BNAcceptFriendInvite(presenceID)
 			else
+				print('bnet', msg)
 				BNDeclineFriendInvite(presenceID)
 			end
 		end
@@ -340,7 +345,7 @@ end, "invite_group")
 
 ns.RegisterEvent("GROUP_ROSTER_UPDATE", function(self, event)
 	if currentGroupLeader and GetNumGroupMembers() <= 1 then
-		-- group left
+		-- left group
 		ns.LeaveQueue(currentGroupLeader)
 		currentGroupLeader = nil
 		ns.UpdateUI(true)

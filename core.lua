@@ -78,10 +78,11 @@ function ns.Initialize()
 	end
 
 	RegisterAddonMessagePrefix("OQ")
-	ns.PreventBnetSpam()
+	-- ns.PreventBnetSpam()
 
-	ns.playerName  = UnitName("player")
-	ns.playerRealm = ns.GetRealmInfoByName( GetRealmName() )
+	local realmName = GetRealmName()
+	ns.playerName  = UnitName("player") .. '-' .. realmName
+	ns.playerRealm = ns.GetRealmInfoByName(realmName)
 	_, ns.playerBattleTag = BNGetInfo()
 	ns.playerBattleTag = string.lower(ns.playerBattleTag)
 
@@ -113,8 +114,8 @@ local pruneData
 
 local enabled = nil
 function ns.Enable()
+	JoinTemporaryChannel(ns.OQchannel)
 	JoinTemporaryChannel('oqgeneral')
-	ns.EnableBnetBroadcast()
 	frame:Show() -- start listening for events
 	enabled = true
 
@@ -123,8 +124,8 @@ function ns.Enable()
 end
 
 function ns.Disable()
+	LeaveChannelByName(ns.OQchannel)
 	LeaveChannelByName('oqgeneral')
-	ns.DisableBnetBroadcast()
 	frame:Hide()
 	enabled = nil
 
@@ -151,12 +152,6 @@ function ns.Print(text, ...)
 		text = join(", ", tostringall(text, ...))
 	end
 	print("|cffE01B5D"..addonName.."|r "..text)
-end
-
-function ns.Debug(...)
-  if true then
-	ns.Print("! "..join(", ", tostringall(...)))
-  end
 end
 
 -- counts table entries. for numerically indexed tables, use #table
