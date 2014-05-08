@@ -1,5 +1,6 @@
 local addonName, ns, _ = ...
 ns.OQversion = '1C'
+ns.OQver = 12
 ns.OQmaxPosts = 5
 ns.OQchannel = 'oqchannel'
 ns.const = {}

@@ -119,6 +119,15 @@ local DecodePremadeInfo = -- oq and oq.decode_premade_info or
 function(data)
 	if not data then return nil end
 	local info, level, iLvl, resilience, numMembers, numWaiting, stat, msgTime, minMMR, karma = string.match(data, "^(.)(.)(..)(...)(.)(.)(.)(......)(..)(.)")
+	-- ..(2:level)(1:demo)(1:class)...(2:hp)(1:role)(1:specid)(2:ilevel)(1:oqversion)(...:info)
+	-- PVE info: (dungeon/raid/roleplay)
+	-- 	(3:dodge)(3:parry)(3:block)(3:mastery)(...:meta)				-- tank
+	--  (3:power)(3:hit)(3:crit)(3:mastery)(3:haste)(...:meta)			-- ranged dps / caster / melee
+	-- PVP info:
+	-- 	(3:resil)(3:pvppwr)(3:wins)(3:losses)(3:tears)(2:mmr)(2:hks)..(...:meta)
+	-- meta: (...:data)(1:karma) contains raids / ranks
+	-- karma: oq.decode_mime64_digits( m.karma ) - 25
+
 
 	local is_horde, has_pword, is_realm_specific, is_source = DecodeFlags(info)
 	local range = DecodeDigit(level) -- levelRange[ DecodeDigit(level) ]

@@ -27,7 +27,17 @@ local raidProgress = {
 	{8174, 8175, 8179, 8182, 8184, 8185, 8189, 8190, 8194, 8195, 8199, 8200},
 	{8144, 8145, 8151, 8152, 8156, 8157, 8162, 8161, 8166, 8167, 8171, 8172}, -- 10/25 heroic
 	{8176, 8177, 8181, 8180, 8186, 8187, 8191, 8192, 8196, 8197, 8202, 8201},
-	{8203, 8256} -- Ra-Den
+	{8203, 8256}, -- Ra-Den
+	-- siege of orgrimmar
+	{8551, 8552, 8557, 8558, 8563, 8564, 8569, 8570, 8576, 8577, 8582, 8583}, -- 10/25 normal
+	{8588, 8589, 8592, 8596, 8601, 8602, 8608, 8609, 8616, 8617, 8622, 8613},
+	{8628, 8629, 8635, 8636},
+	{8553, 8554, 8559, 8560, 8565, 8566, 8571, 8573, 8578, 8579, 8584, 8585}, -- 10/25 heroic
+	{8590, 8591, 8597, 8598, 8603, 8604, 8610, 8612, 8618, 8619, 8624, 8625},
+	{8630, 8631, 8637, 8638},
+	{8550, 8556, 8562, 8568, 8575, 8581}, -- flex
+	{8587, 8594, 8600, 8606, 8615, 8621},
+	{8627, 8634},
 }
 
 local typesPvE = {
@@ -59,16 +69,16 @@ function ns.EncodeStats(premadeType)
 		local demographics = bit.lshift(raceID, 2) + bit.lshift(gender, 1) + faction
 		local flags, xFlags, charm, s1, s2 = 0, 0, 0, 'A', 'A'
 
-		statStub = 'A' -- group/slot index
-			.. (premadeType or ns.const.type['TYPE_NONE'])
-			.. '%s'										-- level
-			.. ns.oq.EncodeNumber64(demographics, 1)
-			.. ns.const.playerClasses[classID]
-			.. ns.oq.EncodeNumber64(flags, 1)
-			.. ns.oq.EncodeNumber64(xFlags, 1)
-			.. ns.oq.EncodeNumber64(charm, 1)
-			.. '%s%s%s%s'								-- maxHealth, role, spec, itemLevel
-			.. ns.oq.EncodeNumber64(ns.OQversion, 1)
+		statStub = 'A' -- group/slot index					-- 1:slot
+			.. (premadeType or ns.const.type['TYPE_NONE']) 	-- 1:type
+			.. '%s'											-- 2:level
+			.. ns.oq.EncodeNumber64(demographics, 1)		-- 1:demographics
+			.. ns.const.playerClasses[classID]				-- 1:player class ?
+			.. ns.oq.EncodeNumber64(flags, 1)				-- 1:flags
+			.. ns.oq.EncodeNumber64(xFlags, 1)				-- 1:xFlags
+			.. ns.oq.EncodeNumber64(charm, 1)				-- 1:charm
+			.. '%s%s%s%s'									-- 2:maxHealth, 1:role, 1:spec, 2:itemLevel
+			.. ns.oq.EncodeNumber64(ns.OQver, 1)			-- 1:version
 	end
 
 	-- dynamic info
@@ -85,6 +95,7 @@ function ns.EncodeStats(premadeType)
 	local OQRoleID = (specRole == 'DAMAGER' and 1) or (specRole == 'HEALER' and 2) or (specRole == 'TANK' and 4) or 3
 	local OQSpecID, OQStatType  = ns.const.specInfo[specID].id, ns.const.specInfo[specID].stats
 
+	-- fill in dynamic info into our static stub
 	local stats = string.format(statStub,
 		ns.oq.EncodeNumber64(level, 2),
 		ns.oq.EncodeNumber64(maxHealth, 2),
@@ -121,10 +132,10 @@ function ns.EncodeStats(premadeType)
 
 		-- wipes & kills, ignore for now
 		stats = stats
-			.. ns.oq.EncodeNumber64(0, 3) -- boss kills (5man, challenge, raid)
-			.. ns.oq.EncodeNumber64(0, 2) -- boss wipes
-			.. ns.oq.EncodeNumber64(0, 3) -- leader dkp
-			.. ns.oq.EncodeNumber64(0, 3) -- dkp
+			.. ns.oq.EncodeNumber64(0, 3) -- 3:kills (5man, challenge, raid)
+			.. ns.oq.EncodeNumber64(0, 2) -- 2:wipes
+			.. ns.oq.EncodeNumber64(0, 3) -- 3:leaderdkp
+			.. ns.oq.EncodeNumber64(0, 3) -- 3:dkp
 	else
 		-- TODO
 		--[[

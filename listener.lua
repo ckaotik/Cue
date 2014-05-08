@@ -247,7 +247,7 @@ local messageHandler = {
 -- ================================================
 local function HandleChatMessage(chatMessage, presenceID, senderName, blizzRealmID)
 	local version, token, ttl, messageType, message = ns.GetOQMessageInfo(chatMessage)
-	-- print('OQ message', chatMessage, presenceID, senderName, blizzRealmID)
+	-- print('OQ message', version, chatMessage, presenceID, senderName, blizzRealmID)
 	if messageType and messageHandler[messageType] then
 		messageHandler[messageType](version, token, ttl, messageType, message)
 	end
@@ -270,6 +270,7 @@ ns.RegisterEvent("BN_CHAT_MSG_ADDON", function(self, event, prefix, chatMessage,
 	local _, toonName, client, realmName, realmID, _, _, _, _, _, _, _, _, _, _, presenceID = BNGetToonInfo(senderToonID)
 	local senderName = toonName..'-'..realmName:gsub(' ', '')
 	print('BN_CHAT_MSG_ADDON', prefix, chatMessage, senderToonID, senderName, realmID)
+	-- BN_CHAT_MSG_ADDON OQ OQ,1C,W1,0,removed_from_waitlist,GBd6t8,Q/aexm 38 Munkkininja-DefiasBrotherhood 635
 	HandleChatMessage(chatMessage, presenceID, senderName, realmID)
 end, "oq_msg_bnet_addon")
 
