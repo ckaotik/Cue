@@ -128,7 +128,6 @@ function(data)
 	-- meta: (...:data)(1:karma) contains raids / ranks
 	-- karma: oq.decode_mime64_digits( m.karma ) - 25
 
-
 	local is_horde, has_pword, is_realm_specific, is_source = DecodeFlags(info)
 	local range = DecodeDigit(level) -- levelRange[ DecodeDigit(level) ]
 
@@ -182,8 +181,7 @@ ns.oq.EncodeNumber64 = EncodeNumber64
 local GenerateToken = oq and oq.token_gen or
 function(prefix, saveKey)
 	-- get normalized UTC time with random modifier
-	-- TODO: FIXME: only works on MacOS
-	local token = EncodeNumber64(date('!%s') * 10000 + fastrandom(0, 10000), 5)
+	local token = EncodeNumber64(ns.utc() * 10000 + fastrandom(0, 10000), 5)
 	      token = (prefix or '') .. token
 
 	if saveKey then
@@ -193,7 +191,7 @@ function(prefix, saveKey)
 end
 ns.oq.GenerateToken = GenerateToken
 
--- TODO: this is stupid, anyone can grab password from messages and sign up themselves :( need at least 1-way-encryption + char dependent salt
+-- TODO: this is stupid, anyone can grab password from messages and sign themselves up :( need at least 1-way-encryption + char dependent salt
 function ns.oq.EncodePassword(password)
 	if not password or password == '' then
 		password = '.'

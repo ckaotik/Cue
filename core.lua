@@ -83,6 +83,7 @@ function ns.Initialize()
 	local realmName = GetRealmName()
 	ns.playerName  = UnitName("player") .. '-' .. realmName
 	ns.playerRealm = ns.GetRealmInfoByName(realmName)
+	ns.playerFaction = UnitFactionGroup("player") == 'Horde' and 'H' or 'A' -- TODO: we don't care about indecisive Pandaren
 	_, ns.playerBattleTag = BNGetInfo()
 	ns.playerBattleTag = string.lower(ns.playerBattleTag)
 
@@ -91,7 +92,7 @@ function ns.Initialize()
 
 	if not ns.db.queued then ns.db.queued = {} end 				-- tracks groups we've requested to join
 	if not ns.db.blacklist then ns.db.blacklist = {} end 		-- tracks leaders' battletags we don't want to group with
-	if not ns.db.bntracking then ns.db.bntracking = {} end 		-- tracks requests sent as BN friend invite
+	if not ns.db.bntracking then ns.db.bntracking = {} end 		-- tracks requests sent as BN friend invite so we can set notes
 	if not ns.db.premadeCache then ns.db.premadeCache = {} end 	-- tracks groups that are currently available
 	if not ns.db.tokens then ns.db.tokens = {} end 				-- tracks generated, sent request tokens
 
@@ -187,3 +188,8 @@ function ns.ShowTooltip(self)
 	GameTooltip:Show()
 end
 function ns.HideTooltip() GameTooltip:Hide() end
+
+function ns.utc()
+	-- TODO: FIXME: only works on MacOS
+	return date('!%s')
+end

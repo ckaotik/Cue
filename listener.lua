@@ -65,7 +65,7 @@ function ns.GetLeaderByName(name, realm)
 
 	local leaderName, leaderRealm
 	for leader, data in pairs(ns.db.premadeCache) do
-		leaderName, leaderRealm = ns.oq.DecodeLeaderData(leader)
+		leaderName, leaderRealm, _ = ns.oq.DecodeLeaderData(leader)
 		if leaderName == name and leaderRealm == realm then
 			return leader
 		end
@@ -153,23 +153,29 @@ local function OnDisband(version, token, ttl, messageType, messageText)
 
 	local leader = ns.GetLeaderByToken(raidToken) or ns.GetLeaderByName(sender)
 	if leader then
+		ns.LeaveQueue(leader)
 		wipe(ns.db.premadeCache[leader])
 		ns.db.premadeCache[leader] = nil
-		ns.db.queued[leader] = nil
 	else
 		-- ns.Print("Could not find disbanded group %s by %s", raidToken or '', sender or '')
 	end
 end
 
-local function OnJoin(_, token, _, messageType, message)
+local function OnJoin(version, token, ttl, messageType, message)
+	-- "invite_group,"..req_token ..","..group_id ..","..slot ..","..oq.encode_name( oq.raid.name ) ..","..oq.raid.leader_class  ..","..enc_data ..","..oq.raid.raid_token ..",".oq.encode_note( oq.raid.notes ) ;
+
+	print('OnJoin', version, token, ttl, messageType, message)
+	-- BN_FRIEND_INVITE_ADDED nil: OQ,GTo8dm,#tok:QRvkoi,#grp:1,#nam:Бриллианта-362
+
 	local reqToken, invType, leader = strsplit(',', message)
-	reqToken = reqToken and string.sub(reqToken, 6)
-	leader   = leader   and string.sub(leader, 6)
+	reqToken = reqToken and string.sub(reqToken, 6) -- strip "#tok:"
+	leader   = leader   and string.sub(leader, 6)   -- strip "#nam:"
 
 	local friendNote
 	if invType == '#lead' then
 		friendNote = 'OQ,leader'
 	else
+		invType = string.sub(invType, 6)    -- strip "#grp:"
 		friendNote = 'OQ'
 		-- group leader:
 		-- local leadName, leadRealmID = strsplit('-', leader)
@@ -186,6 +192,13 @@ local function OnJoin(_, token, _, messageType, message)
 	end
 	--]]
 
+	-- OQ,GQIXxf,#tok:QOX3Xy,#grp:1,#nam:Darthsetta-231
+	local data = ns.oq.EncodeLeaderData(ns.playerName, ns.playerRealm, ns.playerBattleTag)
+	local _, _, battleTag = ns.oq.DecodeLeaderData(leader)
+	local slot = 1
+	local message = strjoin(",", token, invType, slot, player_class, data, reqToken)
+	ns.SendMessage(battleTag, true, 'invite_accepted', message, nil, 1)
+
 	-- ns.db.tokens[reqToken] = nil
 	-- ns.db.queued[leader] = ns.const.status.GROUPED
 
@@ -198,7 +211,10 @@ local function OnWaitlistLeave(version, token, ttl, messageType, message)
 	local leader = ns.GetLeaderByRequestToken(reqToken) or ns.GetLeaderByToken(raidToken)
 
 	if leader then
-		-- TOOD: reset .queued status, reset .tokens[reqToken], print info
+		PlaySound("igQuestFailed")
+		ns.Print("You were removed from '%s' wait list",
+			ns.db.premadeCache[leader] and ns.db.premadeCache[leader].title or 'unknown')
+		ns.LeaveQueue(leader)
 	end
 
 	-- decline friend request
@@ -208,7 +224,7 @@ end
 local function OnResponse(version, token, ttl, messageType, message)
 	local raidToken, reqToken, answer, reason = strsplit(",", message)
 	if ns.Find(ns.db.tokens, reqToken) then
-		-- multi-boxer can receive same msg if via real-id msg
+		-- multi-boxers can receive same msg if via real-id msg
 		return
 	end
 
@@ -233,51 +249,63 @@ local function OnResponse(version, token, ttl, messageType, message)
 	return false
 end
 
+local function OnPing(version, token, ttl, messageType, message, senderToonID)
+	local toonName, realmName, faction, battleTag, timestamp, acknowledged = strsplit(",", message)
+	local playerName, playerRealm = UnitName('player'), GetRealmName():gsub(' ', '')
+	local timestamp = ns.oq.EncodeNumber64(ns.utc() or 0, 5)
+	local message = strjoin(',', playerName, playerRealm, ns.playerFaction, ns.playerBattleTag, timestamp, 'ack')
+	ns.SendMessage(senderToonID, true, 'oq_user', message, 'W1', 1)
+end
+
 local messageHandler = {
 	["p8"] = OnPremade,
 	["disband"] = OnDisband,
 	["invite"]  = OnJoin,
+	["invite_group"] = OnJoin,
 	["invite_req_response"]   = OnResponse,
 	["leave_waitlist"]        = OnWaitlistLeave,
 	["removed_from_waitlist"] = OnWaitlistLeave,
+	["oq_user"] = OnPing,
 }
 
 -- ================================================
 --  Listen for message & handle appropriately
 -- ================================================
-local function HandleChatMessage(chatMessage, presenceID, senderName, blizzRealmID)
+local function HandleChatMessage(event, chatMessage, presenceID, senderName, blizzRealmID, senderToonID)
 	local version, token, ttl, messageType, message = ns.GetOQMessageInfo(chatMessage)
-	-- print('OQ message', version, chatMessage, presenceID, senderName, blizzRealmID)
+	if messageType ~= "p8" and messageType ~= "scores" then
+		if message then
+			print(event, messageType, senderToonID, "\n".._G.GRAY_FONT_COLOR_CODE..chatMessage..'|r')
+		else
+			print(event, messageType, senderToonID, "UNPARSED\n".._G.GRAY_FONT_COLOR_CODE..chatMessage..'|r')
+		end
+	end
 	if messageType and messageHandler[messageType] then
-		messageHandler[messageType](version, token, ttl, messageType, message)
+		messageHandler[messageType](version, token, ttl, messageType, message, senderToonID)
 	end
 end
 
--- local presenceID = BNet_GetPresenceID("name")
-ns.RegisterEvent("CHAT_MSG_CHANNEL", function(self, event, message, senderName, _, _, _, _, _, _, channelName)
+ns.RegisterEvent('CHAT_MSG_CHANNEL', function(self, event, chatMessage, senderName, _, _, _, _, _, _, channelName)
 	channelName = channelName:lower()
 	if channelName == ns.OQchannel or channelName == 'oqgeneral' then
-		HandleChatMessage(message, nil, senderName)
+		HandleChatMessage(event, chatMessage, nil, senderName)
 	end
-end, "oq_msg_channel")
+end, 'oq_msg_channel')
 
-ns.RegisterEvent("CHAT_MSG_ADDON", function(self, event, prefix, chatMessage, _, senderName)
-	if prefix ~= "OQ" or sender == ns.playerName then return end
-	HandleChatMessage(chatMessage, nil, senderName)
-end, "oq_msg_addon")
+ns.RegisterEvent('CHAT_MSG_ADDON', function(self, event, prefix, chatMessage, _, senderName)
+	if prefix ~= 'OQ' or senderName == ns.playerName then return end
+	HandleChatMessage(event, chatMessage, nil, senderName)
+end, 'oq_msg_addon')
 
-ns.RegisterEvent("BN_CHAT_MSG_ADDON", function(self, event, prefix, chatMessage, _, senderToonID)
+ns.RegisterEvent('BN_CHAT_MSG_ADDON', function(self, event, prefix, chatMessage, _, senderToonID)
 	local _, toonName, client, realmName, realmID, _, _, _, _, _, _, _, _, _, _, presenceID = BNGetToonInfo(senderToonID)
 	local senderName = toonName..'-'..realmName:gsub(' ', '')
-	print('BN_CHAT_MSG_ADDON', prefix, chatMessage, senderToonID, senderName, realmID)
-	-- BN_CHAT_MSG_ADDON OQ OQ,1C,W1,0,removed_from_waitlist,GBd6t8,Q/aexm 38 Munkkininja-DefiasBrotherhood 635
-	HandleChatMessage(chatMessage, presenceID, senderName, realmID)
-end, "oq_msg_bnet_addon")
+	HandleChatMessage(event, chatMessage, presenceID, senderName, realmID, senderToonID)
+end, 'oq_msg_bnet_addon')
 
-ns.RegisterEvent("CHAT_MSG_BN_WHISPER", function(self, event, message, _, _, _, _, _, _, _, _, _, _, _, presenceID)
-	HandleChatMessage(message, presenceID)
-end, "oq_msg_bnet")
-
+ns.RegisterEvent('CHAT_MSG_BN_WHISPER', function(self, event, chatMessage, _, _, _, _, _, _, _, _, _, _, _, presenceID)
+	HandleChatMessage(event, chatMessage, presenceID)
+end, 'oq_msg_bnet')
 
 local notes = {}
 local function SetFriendNote()
@@ -297,6 +325,7 @@ local function HandleFriendInvites(self, event, ...)
 		local presenceID, presenceName, isBattleTagPresence, msg, broadcastTime = BNGetFriendInviteInfoByAddon(i)
 
 		local version, token, ttl, messageType, message = ns.GetOQMessageInfo(msg)
+		print(event, messageType, "\n".._G.GRAY_FONT_COLOR_CODE..msg.."|r")
 		if not version then
 			token, message = msg:match('^OQ,([^,]+),(.-)$')
 			messageType = 'invite'
@@ -313,7 +342,6 @@ local function HandleFriendInvites(self, event, ...)
 
 				BNAcceptFriendInvite(presenceID)
 			else
-				print('bnet', msg)
 				BNDeclineFriendInvite(presenceID)
 			end
 		end

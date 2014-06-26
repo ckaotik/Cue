@@ -302,7 +302,7 @@ Search details using |cffFFFFFFr|realm, |cffFFFFFFl|reader, |cffFFFFFFg|rroup si
 	list.buttons = {}
 	list.data = {}
 
-	local function LeaveQueue(button, leader) ns.LeaveQueue(leader, not IsShiftKeyDown()) end
+	local function LeaveQueue(button, leader) ns.LeaveQueue(leader, not IsShiftKeyDown()); ns.UpdateUI(true) end
 	local function AddBNFriend(button, battleTag) BNSendFriendInvite(battleTag) end
 	local function Whisper(button, battleTag) ChatFrame_SendSmartTell(battleTag) end
 	local function BanLeader(button, battleTag) table.insert(ns.db.blacklist, battleTag) end
@@ -360,6 +360,7 @@ Search details using |cffFFFFFFr|realm, |cffFFFFFFl|reader, |cffFFFFFFg|rroup si
 			--]]
 			local leader = self:GetParent().key
 			ns.JoinQueue(leader) -- TODO: ask for password if needed
+			ns.UpdateUI(true)
 		end
 	end
 
