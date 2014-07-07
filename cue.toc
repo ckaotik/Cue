@@ -37,7 +37,7 @@ oqueue.lua
 
 # main files
 #hash.lua
-core.lua
+Cue.lua
 
 battlenet.lua
 listener.lua
