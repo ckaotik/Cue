@@ -237,6 +237,7 @@ function ns.InitUI()
 			ns.UpdateUI(true)
 		end)
 		searchbox:SetScript("OnTextChanged", function(self)
+			InputBoxInstructions_OnTextChanged(self)
 			local oldText, text = filters.search, self:GetText()
 			if oldText == text then return end
 			filters.search = (text ~= "" and text ~= SEARCH) and string.lower(text) or nil
