@@ -231,16 +231,12 @@ function ns.InitUI()
 		searchbox:SetFrameLevel(searchbox:GetFrameLevel() + 1)
 		searchbox:SetSize(150, 20)
 		searchbox:SetScript("OnEnterPressed", EditBox_ClearFocus)
-		searchbox:SetScript("OnEscapePressed", function(self)
-			self:SetText(SEARCH)
-			EditBox_ClearFocus(self)
-			ns.UpdateUI(true)
-		end)
+		searchbox:SetScript('OnEscapePressed', function(self) self.clearButton:Click() end)
 		searchbox:SetScript("OnTextChanged", function(self)
 			InputBoxInstructions_OnTextChanged(self)
 			local oldText, text = filters.search, self:GetText()
 			if oldText == text then return end
-			filters.search = (text ~= "" and text ~= SEARCH) and string.lower(text) or nil
+			filters.search = text ~= "" and string.lower(text) or nil
 			ns.UpdateUI(true)
 		end)
 		searchbox.tiptext = function(self, tooltip)
